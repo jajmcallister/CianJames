@@ -1,0 +1,98 @@
+using DifferentialEquations, Distributions, Plots
+
+function synapse_dynamics!(du, u, p, t)
+    c, m, e, i = p
+    N_I, N_M, P = u
+
+    # N_I is number of immature
+    # N_M is number of mature
+    # P is number in resource pool
+    du[1] = c * P - (m + e) * N_I + i * N_M    # dN_I/dt
+    du[2] = m * N_I - i * N_M                  # dN_M/dt
+    du[3] = - du[1] - du[2]                  # dP/dt
+end
+
+# Kesten process 
+function kesten_update!(sizes, ε, η, σ_ε, σ_η)
+    for i in 1:length(sizes)
+        ε_i = rand(Normal(ε, σ_ε))
+        η_i = rand(Normal(η, σ_η))
+        new_size = ε_i * sizes[i] + η_i
+        sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
+    end
+end
+
+
+# Simulation function with Kesten process
+function run_simulation(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η)
+    pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
+    synapses = Int[]  # Array to hold states of synapses (0s and 1s)
+    synapse_sizes = Float64[]  # Sizes of mature synapses
+
+    # Initial conditions
+    u0 = [0.0, 0.0, total_pool_size];
+    p = (rates..., ε, η);
+    tspan = (0.0, total_time);
+
+    # Define ODE problem
+    prob = ODEProblem(synapse_dynamics!, u0, tspan, rates);
+
+    current_time = 0.0;
+    time_step = 0.1;  # discrete time step for Kesten process updates
+
+    while current_time < total_time
+
+        sol = solve(prob, Tsit5(), saveat=current_time:time_step:current_time + time_step);
+        N_I, N_M, P = sol.u[end];
+        current_time += time_step;
+
+        # Update populations:  0s for synapses in N_I and 1s for in N_M
+        synapses = vcat(fill(0, round(Int, N_I)), fill(1, round(Int, N_M)));
+        # 1s for synapses in the pool
+        pool = fill(1, round(Int, P));
+
+        # Apply Kesten process to mature synapses in N_M
+        if N_M > length(synapse_sizes) # If synapses have been added to the mature population since last time
+            new_matures = round(Int, N_M) - length(synapse_sizes);
+            append!(synapse_sizes, fill(0.0, new_matures));  # Initialize new mature synapses with size 0.0
+        elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
+            num_delete_matures = length(synapse_sizes) - round(Int, N_M); #find how many need to be deleted
+            synapse_sizes = sort(synapse_sizes); # sort the synapse size array
+            synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
+        end
+
+        kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η);
+
+    end
+
+    solution = solve(prob);
+
+    return solution, synapse_sizes, synapses
+end
+
+# Parameters
+total_time = 100.0
+total_pool_size = 100
+c, m, e, i = 0.2, 0.2, 0.01, 0.01
+ε, η = 1.0, 0.0
+σ_ε, σ_η = .5, .5
+rates = (c, m, e, i)
+
+# Run simulation
+sol, synapse_sizes, synapses = run_simulation(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η)
+
+# Plot the distribution of synapse sizes
+syn_size = histogram(synapse_sizes, bins=100, xlim=(0,100), label="Synapse Sizes", title="Distribution of Synapse Sizes", xlabel="Size", ylabel="Frequency")
+
+# Extract the solution
+time_array = sol.t
+immature_population_diffeq = sol[1, :]
+mature_population_diffeq = sol[2, :]
+
+
+diffeqplot = plot(time_array, immature_population_diffeq, title="Differential equations solution", label = "Immature Synapses DiffEq", color="red", lw=3, legend=:right)
+plot!(time_array, mature_population_diffeq, label = "Mature Synapses DiffEq", color="blue", lw=3)
+xlabel!("Time")
+ylabel!("Population")
+
+plot(diffeqplot, syn_size, layout=(2,1))
