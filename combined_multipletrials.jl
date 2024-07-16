@@ -7,7 +7,7 @@ using .syn_maturation_functions
 # Parameters
 total_time = 100.0
 total_pool_size = 100
-c, m, e, i = 0.2,0.2,0.01,0.01
+c, m, e, i = 0.2,0.2,0.01,0.05
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
@@ -79,3 +79,8 @@ diffeq_hist = bar(h2.edges, adjusted_weights2,
 
 
 combined_hists = plot(randwalks_hist, diffeq_hist, layout=(2,1))
+
+
+total_plots = plot(rand_walks_plot, randwalks_hist, diffeq_plot, diffeq_hist, layout=(2,2), size=(1200,400))
+
+savefig(total_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syn_mat_plots.png")

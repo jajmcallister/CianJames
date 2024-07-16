@@ -25,6 +25,8 @@ time_array_walks, immature_population_walks, mature_population_walks, synapse_si
 # Plot results
 walkplot = plot(time_array_walks, immature_population_walks, label="Immature", xlabel="Time", ylabel="Population", legend=:topright)
 plot!(time_array_walks, mature_population_walks, label="Mature")
+plot!(time_array_walks,immature_population_walks .+ mature_population_walks, label="Combined Population")
 
-hist_randwalks = histogram(synapse_sizes_walks, title="Distribution of Synapse Sizes (RandWalks)",legend=false)
+hist_randwalks = histogram(synapse_sizes_walks, title="Distribution of Synapse Sizes (RandWalks)",legend=false,xlim=(0,30))
 maximum(synapse_sizes_walks)
+mean(synapse_sizes_walks)

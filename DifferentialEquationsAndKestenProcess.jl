@@ -23,8 +23,10 @@ mature_population_diffeq = sol[2, :]
 
 diffeqplot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equations solution", label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population")
+plot!(time_array_diffeq, mature_population_diffeq .+ immature_population_diffeq, label="Combined Population (Diff Eq)", color=:green, lw=3)
 plot!(time_array_walks, immature_population_walks, label="Immature Synapses (RandWalks)")
 plot!(time_array_walks, mature_population_walks, label="Mature Syanpses (RandWalks)")
+plot!(time_array_walks,immature_population_walks .+ mature_population_walks, label="Combined Population (Rand Walks)")
 
 
 plot(diffeqplot, hist_diffeq, layout=(2,1))
