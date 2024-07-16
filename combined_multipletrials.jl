@@ -6,25 +6,31 @@ using .syn_maturation_functions
 
 # Parameters
 total_time = 100.0
-total_pool_size = 1000
+total_pool_size = 100
 c, m, e, i = 0.2,0.2,0.01,0.01
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
 num_trials = 10
 
-# Run diiferential equations
+# Run differential equations
+total_synapse_sizes_diffeq = []
 sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
 time_array_diffeq = sol.t
 immature_population_diffeq = sol[1, :]
 mature_population_diffeq = sol[2, :]
+for i in 1:num_trials
+    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
+    push!(total_synapse_sizes_diffeq, synapse_sizes_diffeq)
+end
+
 
 
 # Run multiple random walks simulations
 time_walks = []
 immature_total = []
 mature_total = []
-total_synapse_sizes = []
+total_synapse_sizes_randwalks = []
 for i in 1:num_trials
     synapses = Int[]  
     synapse_sizes = Float64[]  # Array to hold sizes of mature synapses
@@ -34,7 +40,7 @@ for i in 1:num_trials
     push!(immature_total, immature_population_walks)
     push!(mature_total, mature_population_walks)
     push!(time_walks, time_array_walks)
-    push!(total_synapse_sizes, synapse_sizes_walks)
+    push!(total_synapse_sizes_randwalks, synapse_sizes_walks)
 end
 
 
@@ -54,13 +60,22 @@ combined_plot = plot(rand_walks_plot, diffeq_plot, layout=(2,1))
 bin_edges = 0:2:10000
 
 
-h = fit(Histogram, vcat(total_synapse_sizes...),bin_edges)
-adjusted_weights = h.weights ./ num_trials
-randwalks_hist = bar(h.edges, adjusted_weights, 
+h1 = fit(Histogram, vcat(total_synapse_sizes_randwalks...),bin_edges)
+adjusted_weights1 = h1.weights ./ num_trials
+randwalks_hist = bar(h1.edges, adjusted_weights1, 
         ylabel="Frequency", 
-        title="Average Distribution of Synapse Sizes (Rand Walks)", legend=false, xlim=(0,50),bar_width=2.0)
+        title="Average Distribution of Synapse Sizes (Rand Walks)", legend=false, xlim=(0,30),bar_width=2.0)
 
-diffeq_hist = histogram(synapse_sizes_diffeq, nbins=100, title="Synapse Sizes (Diff Eq)", label=false, xlim=(0,50), ylabel="Frequency")
+h2 = fit(Histogram, vcat(total_synapse_sizes_diffeq...),bin_edges)
+adjusted_weights2 = h2.weights ./ num_trials
+diffeq_hist = bar(h2.edges, adjusted_weights2, 
+                ylabel="Frequency", 
+                title="Average Distribution of Synapse Sizes (Diff Eq)", legend=false, xlim=(0,30),bar_width=2.0)
+        
+
+
+
+# diffeq_hist = histogram(synapse_sizes_diffeq, nbins=100, title="Synapse Sizes (Diff Eq)", label=false, xlim=(0,50), ylabel="Frequency")
 
 
 combined_hists = plot(randwalks_hist, diffeq_hist, layout=(2,1))
