@@ -53,23 +53,13 @@ function gillespie_step!(pool, synapses, num_synapses, rates)
 end
 
 # Kesten process update function
-function kesten_update!(sizes)
-    ε = 1.0  # multiplication noise term
-    η = 0.0  # additive noise term
-    σ_ε = 1.1  # standard deviation for ε
-    σ_η = 1.05  # standard deviation for η
-
+function kesten_update!(sizes, ε, η, σ_ε, σ_η)
     for i in 1:length(sizes)
         ε_i = rand(Normal(ε, σ_ε))
         η_i = rand(Normal(η, σ_η))
-
-        new_size = sizes[i]*ε_i + η_i
-
-        # making sure we don't have any negative sizes
-        sizes[i] = max(new_size, 0.0)
-
+        new_size = ε_i * sizes[i] + η_i
+        sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
     end
-    return sizes
 end
 
 # Simulation function
@@ -79,7 +69,7 @@ function run_simulation(total_time, total_pool_size, rates)
     num_synapses = 0
     synapse_sizes = Float64[]  # Sizes of mature synapses
 
-    # Initialize tracking variables
+    # Initialise tracking variables
     time_array = [0.0]
     immature_population = [0]
     mature_population = [0]
@@ -102,14 +92,14 @@ function run_simulation(total_time, total_pool_size, rates)
         end
 
         # Update sizes of mature synapses
-        mature_synapse_indices = findall(==(1), synapses)
-        mature_synapse_sizes = [synapse_sizes[i] for i in mature_synapse_indices]
-        new_sizes = kesten_update!(mature_synapse_sizes)
+        # mature_synapse_indices = findall(==(1), synapses)
+        # mature_synapse_sizes = [synapse_sizes[i] for i in mature_synapse_indices]
+        kesten_update!(synapse_sizes)
 
-        # Update sizes in the original list
-        for (idx, new_size) in zip(mature_synapse_indices, new_sizes)
-            synapse_sizes[idx] = new_size
-        end
+        # # Update sizes in the original list
+        # for (idx, new_size) in zip(mature_synapse_indices, new_sizes)
+        #     synapse_sizes[idx] = new_size
+        # end
 
     end
 
@@ -122,6 +112,8 @@ end
 total_time = 100.0
 total_pool_size = 100
 c, m, e, i = 0.2,0.2,0.01,0.01
+ε, η = 1.0, 0.0
+σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
 
 
@@ -132,13 +124,11 @@ num_synapses = 0
 
 
 # Run simulation
-time_array, immature_population, mature_population, synapse_sizes = run_simulation(total_time, total_pool_size, rates)
+time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = run_simulation(total_time, total_pool_size, rates)
 
 # Plot results
-walkplot = plot(time_array, immature_population, label="Immature", xlabel="Time", ylabel="Population", legend=:topright)
-plot!(time_array, mature_population, label="Mature")
+walkplot = plot(time_array_walks, immature_population_walks, label="Immature", xlabel="Time", ylabel="Population", legend=:topright)
+plot!(time_array_walks, mature_population_walks, label="Mature")
 
-histogram(synapse_sizes)
-
-
-
+hist_randwalks = histogram(synapse_sizes_walks, title="Distribution of Synapse Sizes (RandWalks)",legend=false)
+maximum(synapse_sizes_walks)
