@@ -82,7 +82,7 @@ rates = (c, m, e, i)
 sol, synapse_sizes, synapses = run_simulation(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η)
 
 # Plot the distribution of synapse sizes
-hist_diffeq = histogram(synapse_sizes, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false)
+hist_diffeq = histogram(synapse_sizes, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false);
 
 # Extract the solution
 time_array_diffeq = sol.t
@@ -96,7 +96,7 @@ plot!(time_array_walks, immature_population_walks, label="Immature Synapses (Ran
 plot!(time_array_walks, mature_population_walks, label="Mature Syanpses (RandWalks)")
 
 
-plot(diffeqplot, syn_size, layout=(2,1))
+plot(diffeqplot, hist_diffeq, layout=(2,1))
 
 
 histogram_plots = plot(hist_randwalks,hist_diffeq,layout=(2,1))

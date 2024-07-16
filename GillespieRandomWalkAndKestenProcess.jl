@@ -63,7 +63,7 @@ function kesten_update!(sizes, ε, η, σ_ε, σ_η)
 end
 
 # Simulation function
-function run_simulation(total_time, total_pool_size, rates)
+function run_simulation(total_time, total_pool_size, rates,ε, η, σ_ε, σ_η)
     pool = [1 for _ in 1:total_pool_size]  # Initialize pool with synapses
     synapses = Int[]  # Array to hold states of synapses
     num_synapses = 0
@@ -94,7 +94,7 @@ function run_simulation(total_time, total_pool_size, rates)
         # Update sizes of mature synapses
         # mature_synapse_indices = findall(==(1), synapses)
         # mature_synapse_sizes = [synapse_sizes[i] for i in mature_synapse_indices]
-        kesten_update!(synapse_sizes)
+        kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
 
         # # Update sizes in the original list
         # for (idx, new_size) in zip(mature_synapse_indices, new_sizes)
@@ -105,8 +105,6 @@ function run_simulation(total_time, total_pool_size, rates)
 
     return time_array, immature_population, mature_population, synapse_sizes
 end
-
-
 
 # Parameters
 total_time = 100.0
@@ -124,7 +122,7 @@ num_synapses = 0
 
 
 # Run simulation
-time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = run_simulation(total_time, total_pool_size, rates)
+time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = run_simulation(total_time, total_pool_size, rates,ε, η, σ_ε, σ_η)
 
 # Plot results
 walkplot = plot(time_array_walks, immature_population_walks, label="Immature", xlabel="Time", ylabel="Population", legend=:topright)
