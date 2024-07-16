@@ -97,7 +97,7 @@ function run_simulation(total_time, total_pool_size, rates)
         # Initialize sizes for new mature synapses
         for i in 1:length(synapses)
             if synapses[i] == 1 && i > length(synapse_sizes)
-                push!(synapse_sizes, 0.0)  # Initialize the size of new mature synapses to 1.0
+                push!(synapse_sizes, 0.0)  # Initialize the size of new mature synapses to 0.0
             end
         end
 
