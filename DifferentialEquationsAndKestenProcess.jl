@@ -3,7 +3,7 @@ using .syn_maturation_functions
 
 # Parameters
 total_time = 100.0
-total_pool_size = 100
+total_pool_size = 1000
 c, m, e, i = 0.2, 0.2, 0.01, 0.01
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
@@ -13,7 +13,7 @@ rates = (c, m, e, i)
 sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
 
 # Plot the distribution of synapse sizes
-hist_diffeq = histogram(synapse_sizes_diffeq, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false);
+hist_diffeq = histogram(synapse_sizes_diffeq, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false)
 
 # Extract the solution
 time_array_diffeq = sol.t

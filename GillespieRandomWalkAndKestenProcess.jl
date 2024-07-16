@@ -6,7 +6,7 @@ using .syn_maturation_functions
 
 # Parameters
 total_time = 100.0
-total_pool_size = 100
+total_pool_size = 1000
 c, m, e, i = 0.2,0.2,0.01,0.01
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
@@ -20,7 +20,7 @@ num_synapses = 0
 
 
 # Run simulation
-time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η)
+time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η);
 
 # Plot results
 walkplot = plot(time_array_walks, immature_population_walks, label="Immature", xlabel="Time", ylabel="Population", legend=:topright)
