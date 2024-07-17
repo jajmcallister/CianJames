@@ -68,11 +68,10 @@ function kesten_update!(sizes, ε, η, σ_ε, σ_η)
 end
 
 # RandWalks Simulation function
-function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η)
+function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η, kesten_timestep)
     pool = [1 for _ in 1:total_pool_size]  # Initialize pool with synapses
     synapses = Int[]  # Array to hold states of synapses
     num_synapses = 0
-    synapse_sizes = Float64[]  # Sizes of mature synapses
 
     # Initialise tracking variables
     time_array = [0.0]
@@ -99,7 +98,10 @@ function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, ra
         # Update sizes of mature synapses
         # mature_synapse_indices = findall(==(1), synapses)
         # mature_synapse_sizes = [synapse_sizes[i] for i in mature_synapse_indices]
-        kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
+            
+        for j in 0:kesten_timestep:τ
+            kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
+        end
 
         # # Update sizes in the original list
         # for (idx, new_size) in zip(mature_synapse_indices, new_sizes)
@@ -125,7 +127,7 @@ end
 
 
 # DiffEq Simulation function with Kesten process
-function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η)
+function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
@@ -139,13 +141,12 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
     prob = ODEProblem(synapse_dynamics!, u0, tspan, rates);
 
     current_time = 0.0;
-    time_step = 0.1;  # discrete time step for Kesten process updates
 
     while current_time < total_time
 
-        sol = solve(prob, Tsit5(), saveat=current_time:time_step:current_time + time_step);
+        sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
-        current_time += time_step;
+        current_time += kesten_time_step;
 
         # Update populations:  0s for synapses in N_I and 1s for in N_M
         synapses = vcat(fill(0, round(Int, N_I)), fill(1, round(Int, N_M)));
@@ -162,7 +163,7 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
             synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
         end
 
-        kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η);
+        kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
 
     end
 

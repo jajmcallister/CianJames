@@ -8,9 +8,9 @@ c, m, e, i = 0.2, 0.2, 0.01, 0.01
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
-
+kesten_time_step = 0.01
 # Run simulation
-sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
+sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step);
 
 # Plot the distribution of synapse sizes
 hist_diffeq = histogram(synapse_sizes_diffeq, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false)

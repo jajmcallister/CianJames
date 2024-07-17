@@ -12,15 +12,16 @@ c, m, e, i = 0.2,0.2,0.01,0.05
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
 num_trials = 10
+kesten_time_step = 0.01
 
 # Run differential equations
 total_synapse_sizes_diffeq = []
-sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
+sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step);
 time_array_diffeq = sol.t
 immature_population_diffeq = sol[1, :]
 mature_population_diffeq = sol[2, :]
 for i in 1:num_trials
-    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η);
+    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step);
     push!(total_synapse_sizes_diffeq, synapse_sizes_diffeq)
 end
 
@@ -36,7 +37,7 @@ for i in 1:num_trials
     synapse_sizes = Float64[]  # Array to hold sizes of mature synapses
     num_synapses = 0
 
-    time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η);
+    time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η, kesten_time_step);
     push!(immature_total, immature_population_walks)
     push!(mature_total, mature_population_walks)
     push!(time_walks, time_array_walks)
@@ -45,7 +46,7 @@ end
 
 
 # Plotting populations
-rand_walks_plot = plot(time_walks, immature_total, color=:pink, label=false,title="Random Walks solution", lw=3, legend=:right)
+rand_walks_plot = plot(time_walks, immature_total, color=:pink, label=false,title="Random Walks solution", legend=:right)
 plot!(time_walks, mature_total, color=:lightblue, label=false)
 plot!(time_walks[1], immature_total[1], label="Immature Synapses", lw=3, color=:pink)
 plot!(time_walks[1], mature_total[1], label="Mature Synapses", lw=3, color=:lightblue)
@@ -74,13 +75,9 @@ diffeq_hist = bar(h2.edges, adjusted_weights2,
         
 
 
-
-# diffeq_hist = histogram(synapse_sizes_diffeq, nbins=100, title="Synapse Sizes (Diff Eq)", label=false, xlim=(0,50), ylabel="Frequency")
-
-
 combined_hists = plot(randwalks_hist, diffeq_hist, layout=(2,1))
 
 
 total_plots = plot(rand_walks_plot, randwalks_hist, diffeq_plot, diffeq_hist, layout=(2,2), size=(1200,400))
 
-savefig(total_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syn_mat_plots.png")
+# savefig(total_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syn_mat_plots.png")
