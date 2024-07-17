@@ -8,7 +8,7 @@ using .syn_maturation_functions
 total_time = 50.0
 total_pool_size = 1000
 c, m, e, i = 0.2,0.1,0.01,0.05
-ε, η = 1.0, 0.0
+ε, η = 0.99, 1-ε
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
 num_trials = 10

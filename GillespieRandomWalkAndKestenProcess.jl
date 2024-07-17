@@ -30,3 +30,5 @@ plot!(time_array_walks,immature_population_walks .+ mature_population_walks, lab
 hist_randwalks = histogram(synapse_sizes_walks, title="Distribution of Synapse Sizes (RandWalks)",legend=false,xlim=(0,30))
 maximum(synapse_sizes_walks)
 mean(synapse_sizes_walks)
+
+####################
