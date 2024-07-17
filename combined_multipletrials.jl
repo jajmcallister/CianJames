@@ -5,9 +5,9 @@ using Plots, StatsBase
 using .syn_maturation_functions
 
 # Parameters
-total_time = 100.0
-total_pool_size = 100
-c, m, e, i = 0.2,0.2,0.01,0.05
+total_time = 50.0
+total_pool_size = 1000
+c, m, e, i = 0.2,0.1,0.01,0.05
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
@@ -46,12 +46,12 @@ end
 
 
 # Plotting populations
-rand_walks_plot = plot(time_walks, immature_total, color=:pink, label=false,title="Random Walks solution", legend=:right)
+rand_walks_plot = plot(time_walks, immature_total, color=:pink, label=false,title="Random Walks solution", legend=:bottomright)
 plot!(time_walks, mature_total, color=:lightblue, label=false)
 plot!(time_walks[1], immature_total[1], label="Immature Synapses", lw=3, color=:pink)
 plot!(time_walks[1], mature_total[1], label="Mature Synapses", lw=3, color=:lightblue)
 
-diffeq_plot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equations solution", label = "Immature Synapses", color="red", lw=3, legend=:right)
+diffeq_plot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equations solution", label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population")
 
 
@@ -59,19 +59,19 @@ combined_plot = plot(rand_walks_plot, diffeq_plot, layout=(2,1))
 
 # Plotting synapse sizes histograms
 bin_edges = 0:2:10000
-
+yticks = 0:100:1000
 
 h1 = fit(Histogram, vcat(total_synapse_sizes_randwalks...),bin_edges)
 adjusted_weights1 = h1.weights ./ num_trials
 randwalks_hist = bar(h1.edges, adjusted_weights1, 
         ylabel="Frequency", 
-        title="Average Distribution of Synapse Sizes (Rand Walks)", legend=false, xlim=(0,30),bar_width=2.0)
+        title="Average Distribution of Synapse Sizes (Rand Walks)", legend=false, yticks=yticks, xlim=(0,20),bar_width=2.0, ylim=(0,650))
 
 h2 = fit(Histogram, vcat(total_synapse_sizes_diffeq...),bin_edges)
 adjusted_weights2 = h2.weights ./ num_trials
 diffeq_hist = bar(h2.edges, adjusted_weights2, 
                 ylabel="Frequency", 
-                title="Average Distribution of Synapse Sizes (Diff Eq)", legend=false, xlim=(0,30),bar_width=2.0)
+                title="Average Distribution of Synapse Sizes (Diff Eq)", legend=false, yticks=yticks, xlim=(0,20),bar_width=2.0,ylim=(0,650))
         
 
 
