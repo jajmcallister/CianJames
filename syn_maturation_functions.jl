@@ -5,7 +5,7 @@ using DifferentialEquations, Distributions, Plots
 
 
 
-export run_simulation_diffeq, run_simulation_randwalks
+export run_simulation_diffeq, run_simulation_randwalks, run_simulation_diffeq_exp, run_simulation_randwalks_exp
 
 # Gillespie step function with pool and restriction
 function gillespie_step!(pool, synapses, num_synapses, synapse_sizes, rates)
@@ -113,6 +113,95 @@ function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, ra
     return time_array, immature_population, mature_population, synapse_sizes
 end
 
+function run_simulation_randwalks_exp(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep, A, lambda)
+    c,m,e,i = rates
+    dt = kesten_timestep
+    steps = Int(total_time/kesten_timestep)  
+    pool = total_pool_size
+    immature = 0
+    mature = 0
+    pool_history = []
+    immature_history = []
+    mature_history = []
+
+    push!(pool_history, pool)
+    push!(immature_history, immature)
+    push!(mature_history, mature)
+
+    # Synapse sizes for mature population
+    synapse_sizes = Float64[]
+    synapse_size_history = []
+
+
+    # Simulation
+    for t in 1:steps
+        # Transitions from pool to immature
+        pool_to_immature = rand(Binomial(pool, c * dt))
+        pool -= pool_to_immature
+        immature += pool_to_immature
+
+        # Transitions from immature to mature
+        immature_to_mature = rand(Binomial(immature, m * dt))
+        immature -= immature_to_mature
+        mature += immature_to_mature
+        
+        # Initialize new mature synapse sizes
+        for i in 1:immature_to_mature
+            push!(synapse_sizes, 0.0)  # Initial size of a new mature synapse
+        end
+        
+        synapse_sizes = sort(synapse_sizes,rev=true)
+
+        # Transitions from mature to immature
+        # Calculate the probability (using exponential) for each mature synapse to become immature
+        mature_to_immature_indices = []
+        for (i, size) in enumerate(synapse_sizes)
+            prob = A*exp(-size / lambda)*dt
+            if rand() < prob
+                push!(mature_to_immature_indices, i)
+            end
+        end
+        
+        # Update states based on calculated probabilities
+        #mature_to_immature = 0.0191*dt*mature # if taking the average fraction
+        mature_to_immature = length(mature_to_immature_indices) # if simulating it stochastically
+        mature_to_immature = round(Int, mature_to_immature)
+        mature -= mature_to_immature
+        immature += mature_to_immature
+        
+        # Remove synapse sizes for synapses that became immature
+        # Sort indices in reverse order
+        sorted_indices = sort(mature_to_immature_indices, rev=true)
+
+        # # Delete elements at the specified indices
+        for idx in sorted_indices
+            deleteat!(synapse_sizes, idx)
+        end
+        # for i in 1:mature_to_immature
+        #     pop!(synapse_sizes)
+        # end
+        
+        # Transitions from immature to pool
+        immature_to_pool = rand(Binomial(immature, e * dt))
+        immature -= immature_to_pool
+        pool += immature_to_pool
+
+        syn_maturation_functions.kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
+
+        push!(pool_history, pool)
+        push!(immature_history, immature)
+        push!(mature_history, mature)
+        push!(synapse_size_history,synapse_sizes)
+
+    end
+    return immature_history, mature_history, synapse_sizes, synapse_size_history
+
+
+
+end
+
+
+
 function synapse_dynamics!(du, u, p, t)
     c, m, e, i = p
     N_I, N_M, P = u
@@ -172,5 +261,62 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
     return solution, synapse_sizes, synapses
 end
 
+
+function synapse_dynamics_exp!(du, u, p, t)
+    c, m, e, i, λ = p  # Add λ for the exponential distribution parameter
+    N_I, N_M, P = u
+
+    # Compute the rate of dematuration using the exponential probability distribution
+    # Sum over all mature synapses' probabilities of transitioning to immature state
+    dematuration_rate = 0.05*sum(exp(-size / λ) for size in synapse_sizes) / length(synapse_sizes)
+
+    du[1] = c * P - (m + e) * N_I + dematuration_rate * N_M  # dN_I/dt
+    du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
+    du[3] = - du[1] - du[2]  # dP/dt
+end
+
+function run_simulation_diffeq_exp(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, λ, kesten_time_step)
+    pool = fill(1, total_pool_size)  # Initialize resource pool with synapses
+    synapses = Int[]  # Array to hold states of synapses (0s and 1s)
+    synapse_sizes = Float64[]  # Sizes of mature synapses
+
+    # Initial conditions
+    u0 = [0.0, 0.0, total_pool_size]
+    p = (rates..., ε, η, λ)  # Include λ for the exponential distribution parameter
+    tspan = (0.0, total_time)
+
+    # Define ODE problem
+    prob = ODEProblem(synapse_dynamics1!, u0, tspan, p)
+
+    current_time = 0.0
+
+    while current_time < total_time
+        sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step)
+        N_I, N_M, P = sol.u[end]
+        current_time += kesten_time_step
+
+        # Update populations:  0s for synapses in N_I and 1s for in N_M
+        synapses = vcat(fill(0, round(Int, N_I)), fill(1, round(Int, N_M)))
+        # 1s for synapses in the pool
+        pool = fill(1, round(Int, P))
+
+        # Apply Kesten process to mature synapses in N_M
+        if N_M > length(synapse_sizes)  # If synapses have been added to the mature population since last time
+            new_matures = round(Int, N_M) - length(synapse_sizes)
+            append!(synapse_sizes, fill(0.0, new_matures))  # Initialize new mature synapses with size 0.0
+        elseif N_M < length(synapse_sizes)  # If synapses have dematured out of the mature population
+            num_delete_matures = length(synapse_sizes) - round(Int, N_M)  # Find how many need to be deleted
+            # Remove smallest sizes (you could alternatively use other criteria)
+            synapse_sizes = sort(synapse_sizes)[num_delete_matures + 1:end]
+        end
+
+        # Apply Kesten process
+        syn_maturation_functions.kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η)
+    end
+
+    solution = solve(prob)
+
+    return solution, synapse_sizes, synapses
+end
 
 end

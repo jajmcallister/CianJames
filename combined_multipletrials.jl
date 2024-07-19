@@ -5,14 +5,14 @@ using Plots, StatsBase
 using .syn_maturation_functions
 
 # Parameters
-total_time = 50.0
+total_time = 100.0
 total_pool_size = 1000
-c, m, e, i = 0.2,0.1,0.01,0.05
-ε, η = 0.99, 1-ε
+c, m, e, i = 0.2,0.2,0.01,0.05
+ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
+kesten_timestep = 0.01
 num_trials = 10
-kesten_time_step = 0.01
 
 # Run differential equations
 total_synapse_sizes_diffeq = []
@@ -64,20 +64,21 @@ yticks = 0:100:1000
 h1 = fit(Histogram, vcat(total_synapse_sizes_randwalks...),bin_edges)
 adjusted_weights1 = h1.weights ./ num_trials
 randwalks_hist = bar(h1.edges, adjusted_weights1, 
-        ylabel="Frequency", 
+        ylabel="Frequency",
         title="Average Distribution of Synapse Sizes (Rand Walks)", legend=false, yticks=yticks, xlim=(0,20),bar_width=2.0, ylim=(0,650))
 
 h2 = fit(Histogram, vcat(total_synapse_sizes_diffeq...),bin_edges)
 adjusted_weights2 = h2.weights ./ num_trials
 diffeq_hist = bar(h2.edges, adjusted_weights2, 
-                ylabel="Frequency", 
+                ylabel="Frequency", xlabel="Synapse size",
                 title="Average Distribution of Synapse Sizes (Diff Eq)", legend=false, yticks=yticks, xlim=(0,20),bar_width=2.0,ylim=(0,650))
         
 
 
 combined_hists = plot(randwalks_hist, diffeq_hist, layout=(2,1))
 
+using Plots.PlotMeasures
 
-total_plots = plot(rand_walks_plot, randwalks_hist, diffeq_plot, diffeq_hist, layout=(2,2), size=(1200,400))
+total_plots = plot(rand_walks_plot, randwalks_hist, diffeq_plot, diffeq_hist, layout=(2,2), size=(1200,400), bottommargin=8mm)
 
-# savefig(total_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syn_mat_plots.png")
+# savefig(total_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syn_mat_plots.svg")

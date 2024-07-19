@@ -11,19 +11,31 @@ function exp_dist(x,A,lambda)
     return A*exp(-x/lambda)
 end
 
+function log_normal(x,sigma,mu)
+    return (1/(x*sigma*sqrt(2*pi)))*(exp(-((log(x)-mu)^2)/(2*sigma^2)))
+end
+
 
 alpha = 0.01
 x_m = 10
-lambda = 0.1
-A = 0.5
+lambda = 2
+A = 0.05
 threshold = 0.0001
+mu = 0.0
+sigma = 1
 
-xvals=0:0.01:2
+xvals=0.01:0.01:20
 
 
 
-integral, error = quadgk(x -> pareto_dist(x,alpha,x_m,threshold) * exp_dist(x,A,lambda), 0, Inf)
 
-plot(xvals, pareto_dist.(xvals,alpha,x_m,threshold))
-plot!(xvals, exp_dist.(xvals,A,lambda))
-plot!(xvals, pareto_dist.(xvals,alpha,x_m,threshold) .* exp_dist.(xvals,A,lambda))
+comb_plot = plot(xvals, log_normal.(xvals,sigma,mu),lw=3, label="Log-normal limiting distribution",color=:orange)
+plot!(xvals, exp_dist.(xvals,A,lambda),lw=3, label="Exponential pdf for weight-dependent dematuring", color=:green, xlabel="Synapse size", ylabel="Probability")
+plot!(xvals, log_normal.(xvals,sigma,mu) .* exp_dist.(xvals,A,lambda),label="Product of other two functions to be integrated", lw=3, color=:purple,xlim=(0,5))
+
+savefig(comb_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/comb_plot.svg")
+
+integral, error = quadgk(x -> (1/(x*sigma*sqrt(2*pi)))*(exp(-((log(x)-mu)^2)/(2*sigma^2)))* exp_dist(x,A,lambda), 0.0, Inf)
+
+
+integral2, error2 = quadgk(x -> pareto_dist(x,alpha,x_m,threshold)*(exp(-((log(x)-mu)^2)/(2*sigma^2)))* exp_dist(x,A,lambda), 0.0, Inf)
