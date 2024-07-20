@@ -101,7 +101,7 @@ for t in 1:steps
 
 end
 
-weight_dep_plot = plot(immature_history, lw=3, label="Immature population", title="Using average dematuring fraction = 0.0191")
+weight_dep_plot = plot(immature_history, lw=3, label="Immature population")
 plot!(mature_history,lw=3, label="Mature population", legend=:right)
 
 

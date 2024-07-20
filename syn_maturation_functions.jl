@@ -72,6 +72,7 @@ function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, ra
     pool = [1 for _ in 1:total_pool_size]  # Initialize pool with synapses
     synapses = Int[]  # Array to hold states of synapses
     num_synapses = 0
+    synapse_size_history = []
 
     # Initialise tracking variables
     time_array = [0.0]
@@ -101,16 +102,14 @@ function run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, ra
             
         for j in 0:kesten_timestep:τ
             kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
+            syn_sizes = copy(synapse_sizes)
+            push!(synapse_size_history, syn_sizes)
         end
 
-        # # Update sizes in the original list
-        # for (idx, new_size) in zip(mature_synapse_indices, new_sizes)
-        #     synapse_sizes[idx] = new_size
-        # end
 
     end
 
-    return time_array, immature_population, mature_population, synapse_sizes
+    return time_array, immature_population, mature_population, synapse_sizes, synapse_size_history
 end
 
 function run_simulation_randwalks_exp(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep, A, lambda)
@@ -263,14 +262,15 @@ end
 
 
 function synapse_dynamics_exp!(du, u, p, t)
-    c, m, e, i, λ = p  # Add λ for the exponential distribution parameter
+    c, m, e, i, λ, synapse_sizes, = p 
     N_I, N_M, P = u
 
     # Compute the rate of dematuration using the exponential probability distribution
     # Sum over all mature synapses' probabilities of transitioning to immature state
-    dematuration_rate = 0.05*sum(exp(-size / λ) for size in synapse_sizes) / length(synapse_sizes)
 
-    du[1] = c * P - (m + e) * N_I + dematuration_rate * N_M  # dN_I/dt
+    dematuration_rate = 0.05 * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+
+    du[1] = c * P - (m + e) * N_I + (dematuration_rate) * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
     du[3] = - du[1] - du[2]  # dP/dt
 end
@@ -282,15 +282,18 @@ function run_simulation_diffeq_exp(total_time, total_pool_size, rates, ε, η, �
 
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size]
-    p = (rates..., ε, η, λ)  # Include λ for the exponential distribution parameter
+
+    p = (rates..., ε, η, λ, copy(synapse_sizes))
     tspan = (0.0, total_time)
 
     # Define ODE problem
-    prob = ODEProblem(synapse_dynamics1!, u0, tspan, p)
+    prob = ODEProblem(synapse_dynamics_exp!, u0, tspan, p)
 
     current_time = 0.0
 
     while current_time < total_time
+
+        # p = (rates..., ε, η, λ, copy(synapse_sizes))
         sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step)
         N_I, N_M, P = sol.u[end]
         current_time += kesten_time_step

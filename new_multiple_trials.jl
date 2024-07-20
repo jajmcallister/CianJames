@@ -44,4 +44,4 @@ plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses 
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
 
-savefig(exp_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/exp_final_plots.svg")
+# savefig(exp_plots, "C://Users/B00955735/OneDrive - Ulster University/Desktop/exp_final_plots.svg")
