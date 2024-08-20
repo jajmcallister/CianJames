@@ -41,5 +41,5 @@ hist_plot_time = plot(syn_history1,syn_history2,syn_history3, layout=(1,3), size
 
 
 
-savefig(hist_plot_time, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hist_plot_time.svg")
+# savefig(hist_plot_time, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hist_plot_time.svg")
 ####################

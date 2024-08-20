@@ -101,17 +101,19 @@ for t in 1:steps
 
 end
 
-weight_dep_plot = plot(immature_history, lw=3, label="Immature population")
-plot!(mature_history,lw=3, label="Mature population", legend=:right)
+time_walks = collect(0:0.01:100)
 
-
+weight_dep_plot = plot(time_walks, immature_history, lw=3, label="Immature population")
+plot!(time_walks, mature_history,lw=3, label="Mature population", legend=:right)
+plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
 
 
 weight_dep_hist = histogram(synapse_sizes,xlim=(0,30),label=false,title="Final distribution of synapse sizes", xlabel="Synapse size", ylabel="Frequency")
 
 
-savefig(weight_dep_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/weight_dep_plot_avg.svg")
+# savefig(weight_dep_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/weight_dep_plot_avg.svg")
 
 
 

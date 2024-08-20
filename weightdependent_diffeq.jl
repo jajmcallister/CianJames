@@ -18,9 +18,6 @@ function synapse_dynamics_weightdependent!(du, u, p, t)
     N_I, N_M, P = u
     A = i
 
-    # Compute the rate of dematuration using the exponential probability distribution
-    # Sum over all mature synapses' probabilities of transitioning to immature state
-
     dematuration_rate = A * mean(exp.(-synapse_sizes / λ))
 
 
