@@ -79,13 +79,11 @@ for t in 1:steps
     # Sort indices in reverse order
     sorted_indices = sort(mature_to_immature_indices, rev=true)
 
-    # # Delete elements at the specified indices
+    # Delete elements at the specified indices
     for idx in sorted_indices
         deleteat!(synapse_sizes, idx)
     end
-    # for i in 1:mature_to_immature
-    #     pop!(synapse_sizes)
-    # end
+
     
     # Transitions from immature to pool
     immature_to_pool = rand(Binomial(immature, e * dt))
