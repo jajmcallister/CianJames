@@ -127,3 +127,6 @@ plot!(time_walks, immature_total[1], label="Immature Synapses", lw=3, color=:pin
 plot!(time_walks, mature_total[1], label="Mature Synapses", lw=3, color=:lightblue)
 plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+
+#end
+time_walks

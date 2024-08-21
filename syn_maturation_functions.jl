@@ -328,7 +328,7 @@ function synapse_dynamics_weightdependent!(du, u, p, t)
     N_I, N_M, P = u
     A = i
 
-    dematuration_rate = maximum(A*exp.(-synapse_sizes / λ))
+    dematuration_rate = mean(A*exp.(-synapse_sizes / λ))
 
     du[1] = c * P - (m + e) * N_I + dematuration_rate * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
