@@ -324,11 +324,19 @@ end
 
 
 function synapse_dynamics_weightdependent!(du, u, p, t)
-    c, m, e, i, λ, A, synapse_sizes = p
+    c, m, e, i, λ, A, synapse_sizes, dematuration_rate = p
     N_I, N_M, P = u
     A = i
 
-    dematuration_rate = mean(A*exp.(-synapse_sizes / λ))
+    # local num_mature_to_immature = 0
+    # for (i, size) in enumerate(synapse_sizes)
+    #     prob = A*exp(-size / λ)*0.01
+    #     if rand() < prob
+    #         num_mature_to_immature+=1
+    #     end
+    # end
+
+    # dematuration_rate =  num_mature_to_immature/length(synapse_sizes) # mean(A*exp.(-synapse_sizes / λ))
 
     du[1] = c * P - (m + e) * N_I + dematuration_rate * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
@@ -338,23 +346,48 @@ end
 
 
 function run_simulation_diffeq_weightdependent(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, λ, A, kesten_time_step)
-    pool = fill(1, total_pool_size)  # Initialize resource pool with synapses
+    pool = fill(1, total_pool_size)  # Initialise resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
 
-    # Initial conditions
+    # local num_mature_to_immature = 0
+    # for (i, size) in enumerate(synapse_sizes)
+    #     prob = A*exp(-size / λ)*0.01
+    #     if rand() < prob
+    #         num_mature_to_immature+=1
+    #     end
+    # end
+
+    # dematuration_rate =  num_mature_to_immature/length(synapse_sizes)
+
     u0 = [0.0, 0.0, total_pool_size]
-    p = (rates..., ε, η, λ, A, synapse_sizes)  # Include λ for the exponential distribution parameter
     tspan = (0.0, total_time)
 
-    # Define ODE problem
-    prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
+    # # Define ODE problem
+    # prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
 
     current_time = 0.0
+    NIs = []
+    NMs = []
 
     while current_time < total_time
+        local num_mature_to_immature = 0
+        for (i, size) in enumerate(synapse_sizes)
+            prob = A*exp(-size / λ)
+            if rand() < prob
+                num_mature_to_immature+=1
+            end
+        end
+
+        dematuration_rate =  num_mature_to_immature/length(synapse_sizes)
+        p = (rates..., ε, η, λ, A, synapse_sizes, dematuration_rate)
+
+        prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
+
         sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step)
         N_I, N_M, P = sol.u[end]
+        push!(NIs, N_I)
+        push!(NMs, N_M)
         current_time += kesten_time_step
 
         # Update populations:  0s for synapses in N_I and 1s for in N_M
@@ -365,10 +398,10 @@ function run_simulation_diffeq_weightdependent(total_time, total_pool_size, rate
         # Apply Kesten process to mature synapses in N_M
         if N_M > length(synapse_sizes)  # If synapses have been added to the mature population since last time
             new_matures = round(Int, N_M) - length(synapse_sizes)
-            append!(synapse_sizes, fill(0.0, new_matures))  # Initialize new mature synapses with size 0.0
+            append!(synapse_sizes, fill(0.0, new_matures))  # Initialise new mature synapses with size 0.0
         elseif N_M < length(synapse_sizes)  # If synapses have dematured out of the mature population
             num_delete_matures = length(synapse_sizes) - round(Int, N_M)  # Find how many need to be deleted
-            # Remove smallest sizes (you could alternatively use other criteria)
+            # Remove smallest
             synapse_sizes = sort(synapse_sizes)[num_delete_matures + 1:end]
         end
 
@@ -376,9 +409,8 @@ function run_simulation_diffeq_weightdependent(total_time, total_pool_size, rate
         syn_maturation_functions.kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η)
     end
 
-    solution = solve(prob)
 
-    return solution, synapse_sizes, synapses
+    return NIs, NMs, synapse_sizes, synapses
 end
 
 end
