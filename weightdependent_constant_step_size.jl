@@ -103,8 +103,11 @@ time_walks = collect(0:0.01:100)
 
 weight_dep_plot = plot(time_walks, immature_history, lw=3, label="Immature population")
 plot!(time_walks, mature_history,lw=3, label="Mature population", legend=:right)
-plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
-plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+plot!(time_diffs, nis, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+plot!(time_diffs, nms, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+
+# plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+# plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
 
 

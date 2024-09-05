@@ -264,11 +264,12 @@ end
 function synapse_dynamics_exp!(du, u, p, t)
     c, m, e, i, λ, synapse_sizes, = p 
     N_I, N_M, P = u
+    A = i
 
     # Compute the rate of dematuration using the exponential probability distribution
     # Sum over all mature synapses' probabilities of transitioning to immature state
 
-    dematuration_rate = 0.05 * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+    dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
 
     du[1] = c * P - (m + e) * N_I + (dematuration_rate) * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
@@ -324,9 +325,8 @@ end
 
 
 function synapse_dynamics_weightdependent!(du, u, p, t)
-    c, m, e, i, λ, A, synapse_sizes, dematuration_rate = p
+    c, m, e, i, dematuration_rate = p
     N_I, N_M, P = u
-    A = i
 
     # local num_mature_to_immature = 0
     # for (i, size) in enumerate(synapse_sizes)
@@ -350,37 +350,31 @@ function run_simulation_diffeq_weightdependent(total_time, total_pool_size, rate
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
 
-    # local num_mature_to_immature = 0
-    # for (i, size) in enumerate(synapse_sizes)
-    #     prob = A*exp(-size / λ)*0.01
-    #     if rand() < prob
-    #         num_mature_to_immature+=1
-    #     end
-    # end
-
-    # dematuration_rate =  num_mature_to_immature/length(synapse_sizes)
-
     u0 = [0.0, 0.0, total_pool_size]
     tspan = (0.0, total_time)
-
-    # # Define ODE problem
-    # prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
 
     current_time = 0.0
     NIs = []
     NMs = []
 
     while current_time < total_time
-        local num_mature_to_immature = 0
-        for (i, size) in enumerate(synapse_sizes)
-            prob = A*exp(-size / λ)
-            if rand() < prob
-                num_mature_to_immature+=1
-            end
+        # local num_mature_to_immature = 0
+        # for (i, size) in enumerate(synapse_sizes)
+        #     prob = A*exp(-size / λ)
+        #     if rand() < prob
+        #         num_mature_to_immature+=1
+        #     end
+        # end
+
+        # dematuration_rate =  num_mature_to_immature/length(synapse_sizes)
+        if isempty(synapse_sizes)
+            dematuration_rate = A
+        else
+            dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
         end
 
-        dematuration_rate =  num_mature_to_immature/length(synapse_sizes)
-        p = (rates..., ε, η, λ, A, synapse_sizes, dematuration_rate)
+        c, m, e, i = rates
+        p = (c, m, e, i , dematuration_rate)
 
         prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
 
@@ -409,8 +403,19 @@ function run_simulation_diffeq_weightdependent(total_time, total_pool_size, rate
         syn_maturation_functions.kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η)
     end
 
+    if isempty(synapse_sizes)
+        dematuration_rate = A
+    else
+        dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+    end
 
-    return NIs, NMs, synapse_sizes, synapses
+    c, m, e, i = rates
+    p = (c, m, e, i , dematuration_rate)
+
+    prob = ODEProblem(synapse_dynamics_weightdependent!, u0, tspan, p)
+
+    solution = solve(prob)
+    return NIs, NMs, synapse_sizes, synapses, solution
 end
 
 end

@@ -115,7 +115,7 @@ end
 time_walks = collect(0:0.01:100)
 
 # Differential equations
-solution, synapse_sizes, synapses = syn_maturation_functions.run_simulation_diffeq_weightdependent(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, λ, A, kesten_time_step);
+Nis, Nms, synapse_sizes, synapses, solution = syn_maturation_functions.run_simulation_diffeq_weightdependent(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, λ, A, kesten_time_step);
 time_array_diffeq = solution.t
 immature_population_diffeq = solution[1, :]
 mature_population_diffeq = solution[2, :]
@@ -125,8 +125,9 @@ plot(time_walks, immature_total, color=:pink, label=false,title="Weight Dependen
 plot!(time_walks, mature_total, color=:lightblue, label=false)
 plot!(time_walks, immature_total[1], label="Immature Synapses", lw=3, color=:pink)
 plot!(time_walks, mature_total[1], label="Mature Synapses", lw=3, color=:lightblue)
-plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
-plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+# plot!(time_diffs, Nis, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+# plot!(time_diffs, Nms, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+plot!(time_array_diffeq, immature_population_diffeq,label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+plot!(time_array_diffeq, mature_population_diffeq,label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
-#end
-time_walks
+
