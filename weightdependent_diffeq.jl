@@ -24,6 +24,8 @@ mature_population_diffeq = soll[2, :]
 diffeqplot = plot(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
+
+
 time_diffs = collect(0:0.01:100)[1:end-1]
 
 plot(time_diffs, nis, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)

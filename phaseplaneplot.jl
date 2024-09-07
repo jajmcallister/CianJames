@@ -12,7 +12,9 @@ function phase_synapse_dynamics!(du, u, p, t)
 end
 
 # Parameters and initial conditions
-paramss = (0.2,0.2,0.01,0.05)  # Example rates
+c, m, e, i = 0.2,0.1,0.2,0.3
+
+paramss = (c, m, e, i)  # Example rates
 u01 = [0.0, 0.0, 1000.0]  # Initial conditions for N_I, N_M, N_P
 u02 = [100.0, 300.0, 600.0]
 u03 = [100.0, 700.0, 200.0]
@@ -64,8 +66,18 @@ scatter!([final_I_value],[final_M_value],label="Steady state solution")
 
 # savefig(q, "C://Users/B00955735/OneDrive - Ulster University/Desktop/vectorfield.png")
 
+plot(N_M4)
+plot!(N_I4)
+plot!(N_M3+N_I3)
+
+
+m/i
+maximum(N_M4 ./ N_I4)
 
 # nullclines
+
+
+
 function nullcline_NI(N_I)
     # Nullcline for dN_I/dt = 0
     return (1000*c-N_I * c-(e+m)*N_I)/(c-i)

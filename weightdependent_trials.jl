@@ -121,7 +121,7 @@ immature_population_diffeq = solution[1, :]
 mature_population_diffeq = solution[2, :]
 
 
-plot(time_walks, immature_total, color=:pink, label=false,title="Weight Dependent Multiple Trials", legend=:right)
+trialsplot = plot(time_walks, immature_total, color=:pink, label=false,title="Weight Dependent Multiple Trials", legend=:right)
 plot!(time_walks, mature_total, color=:lightblue, label=false)
 plot!(time_walks, immature_total[1], label="Immature Synapses", lw=3, color=:pink)
 plot!(time_walks, mature_total[1], label="Mature Synapses", lw=3, color=:lightblue)
@@ -131,3 +131,4 @@ plot!(time_array_diffeq, immature_population_diffeq,label = "Immature Synapses (
 plot!(time_array_diffeq, mature_population_diffeq,label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
 
+savefig(trialsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/trials_plot.png")

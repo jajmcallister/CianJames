@@ -4,7 +4,8 @@ using .syn_maturation_functions
 # Parameters
 total_time = 100.0
 total_pool_size = 1000
-c, m, e, i = 0.2,0.2,0.01,0.05
+c, m, e, i = 0.1,0.05,0.5,0.01
+# c, m, e, i = 0.2,0.2,0.05,0.05
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
@@ -28,7 +29,9 @@ plot(immature_population_diffeq, mature_population_diffeq, xlabel="N_I", ylabel=
 
 diffeqplot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equation version of model", label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
-# hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
+plot!(time_array_diffeq, immature_population_diffeq+mature_population_diffeq, lw=3, label="Mature+Immature")
+
+hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 # plot!(time_array_diffeq, mature_population_diffeq .+ immature_population_diffeq, label="Combined Population (Diff Eq)", color=:green, lw=3)
 # plot!(time_array_walks, immature_population_walks, label="Immature Synapses (RandWalks)")
 # plot!(time_array_walks, mature_population_walks, label="Mature Syanpses (RandWalks)")
@@ -40,4 +43,4 @@ plot(diffeqplot, hist_diffeq, layout=(2,1))
 
 histogram_plots = plot(hist_randwalks,hist_diffeq,layout=(2,1))
 
-savefig(diffeqplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/steady_state1.svg")
+savefig(diffeqplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sumplot.png")
