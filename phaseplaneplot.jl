@@ -9,6 +9,7 @@ function phase_synapse_dynamics!(du, u, p, t)
     du[1] = c * N_P - (e + m) * N_I + i * N_M  # dN_I/dt
     du[2] = m * N_I - i * N_M                  # dN_M/dt
     du[3] = e * N_I - c * N_P                  # dN_P/dt
+    # du[3] = - du[1] - du[2] 
 end
 
 # Parameters and initial conditions
@@ -71,13 +72,8 @@ plot!(N_I4)
 plot!(N_M3+N_I3)
 
 
-m/i
-maximum(N_M4 ./ N_I4)
 
 # nullclines
-
-
-
 function nullcline_NI(N_I)
     # Nullcline for dN_I/dt = 0
     return (1000*c-N_I * c-(e+m)*N_I)/(c-i)
