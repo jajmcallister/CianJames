@@ -1,21 +1,15 @@
-using Random
-using Distributions
-using Plots
-using .syn_maturation_functions
-
 # Parameters
-N = 1000                    # Number of potential synapses
-dt = 0.01                   # Time step
-T = 100.0                    # Total simulation time
-steps = Int(T / dt)           # Number of steps
-
-# Parameters
-total_time = 100.0
+total_time = 200.0
+steps = Int(total_time / dt)   
 total_pool_size = 1000
-c, m, e, i = 0.2, 0.2, 0.01, 0.05
+m, i, λ = 0.1,0.05,2
+
+el(t) = 0.1 * exp(-t / 10) + 0.2
+cr(t) = 0.2 * exp(-t / 30) + 0.2
+
 ε, η = 1, 0
 σ_ε, σ_η = 0.5, 0.5
-rates = (c, m, e, i)
+rates = (m, i)
 kesten_time_step = 0.01
 
 # Exponential parameter λ
@@ -23,7 +17,7 @@ A = i
 λ = 2
 
 # States
-pool = N
+pool = total_pool_size
 immature = 0
 mature = 0
 pool_history = []
@@ -42,7 +36,8 @@ synapse_size_history = []
 # Simulation
 for t in 1:steps
     # Transitions from pool to immature
-    pool_to_immature = rand(Binomial(pool, c * dt))
+    c1 = cr(t / kesten_time_step)
+    pool_to_immature = rand(Binomial(pool, c1 * dt))
     pool -= pool_to_immature
     immature += pool_to_immature
 
@@ -61,15 +56,14 @@ for t in 1:steps
     # Transitions from mature to immature
     # Calculate the probability (using exponential) for each mature synapse to become immature
     mature_to_immature_indices = []
-    for (i, size) in enumerate(synapse_sizes)
+    for (id, size) in enumerate(synapse_sizes)
         prob = A * exp(-size / λ) * dt
         if rand() < prob
-            push!(mature_to_immature_indices, i)
+            push!(mature_to_immature_indices, id)
         end
     end
 
     # Update states based on calculated probabilities
-    #mature_to_immature = 0.0191*dt*mature # if taking the average fraction
     mature_to_immature = length(mature_to_immature_indices) # if simulating it stochastically
     mature_to_immature = round(Int, mature_to_immature)
     mature -= mature_to_immature
@@ -86,7 +80,8 @@ for t in 1:steps
 
 
     # Transitions from immature to pool
-    immature_to_pool = rand(Binomial(immature, e * dt))
+    e1 = el(t / kesten_time_step)
+    immature_to_pool = rand(Binomial(immature, e1 * dt))
     immature -= immature_to_pool
     pool += immature_to_pool
 
@@ -99,39 +94,13 @@ for t in 1:steps
 
 end
 
-time_walks = collect(0:0.01:100)
+time_walks = collect(0:0.01:200)
 
-weight_dep_plot = plot(time_walks, immature_history, lw=3, label="Immature population")
+var_plot_diffeq = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
+plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
+
+var_plot_randwalks = plot!(time_walks, immature_history, lw=3, label="Immature population")
 plot!(time_walks, mature_history, lw=3, label="Mature population", legend=:right)
-plot!(time_diffs, nis, label="Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
-plot!(time_diffs, nms, label="Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time", ylabel="Population size")
+plot!(time_walks, immature_history+mature_history)
 
-# plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
-# plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
-
-
-
-weight_dep_hist = histogram(synapse_sizes, xlim=(0, 30), label=false, title="Final distribution of synapse sizes", xlabel="Synapse size", ylabel="Frequency")
-
-
-# savefig(weight_dep_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/weight_dep_plot_avg.svg")
-
-
-
-
-
-
-
-
-# xbins = 0:0.5:100
-# # Create an animation object
-# anim = @animate for t in 1:10000
-#     histogram(synapse_size_history[t], bins=xbins, xlim=(0, 10), ylim=(0, 500),
-#         title="Time = $t", xlabel="Value", ylabel="Frequency", legend=false)
-# end
-
-# # Save the animation as a GIF
-# hist_gif = gif(anim, "histograms.gif", fps=50)
-
-
-# savefig(hist_gif, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hist_gif.gif")

@@ -53,6 +53,8 @@ function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, 
     u0 = [0.0, 0.0, total_pool_size];
     tspan = (0.0, total_time);
     p = (m, i, λ, synapse_sizes)
+    Ihist = []
+    Mhist = []
 
     # Define ODE problem
     prob = ODEProblem(synapse_dynamics_var!, u0, tspan, p);
@@ -63,6 +65,8 @@ function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, 
 
         sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
+        push!(Ihist, N_I)
+        push!(Mhist,  N_M)
         current_time += kesten_time_step;
 
         N_M = max(0, N_M)
@@ -126,7 +130,7 @@ plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 hline!([(immature_population_var+mature_population_var)[end]],label=false)
 
-savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")
+# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")
 
 
 histogram(synapse_sizes_var,xlim=(0,30), label=false)
