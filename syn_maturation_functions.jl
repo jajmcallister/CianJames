@@ -262,7 +262,7 @@ end
 
 
 function synapse_dynamics_exp!(du, u, p, t)
-    c, m, e, i, λ, synapse_sizes, = p 
+    c, m, e, i, λ, synapse_sizes = p 
     N_I, N_M, P = u
     A = i
 

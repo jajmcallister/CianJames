@@ -134,4 +134,4 @@ end
 hist_gif = gif(anim, "histograms.gif", fps=50)
 
 
-savefig(hist_gif, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hist_gif.gif")
+# savefig(hist_gif, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hist_gif.gif")
