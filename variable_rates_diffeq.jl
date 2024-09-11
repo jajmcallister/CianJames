@@ -14,10 +14,7 @@ creat = cr.(1:100)
 varrates = plot(elim, label="Elimination rate", ylim=(0,0.5), lw=2)
 plot!(creat, label="Creation rate", lw=2, xlabel="time")
 
-savefig(varrates, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varrates.png")
-
-m = 0.05
-i = 0.03
+# savefig(varrates, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varrates.png")
 
 function synapse_dynamics_var!(du, u, p, t)
     m, i, λ, synapse_sizes = p 
@@ -109,7 +106,7 @@ function kesten_update_var!(sizes, ε, η, σ_ε, σ_η)
 end
 
 
-m, i, λ = 0.1,0.05,2
+m, i, λ = 0.166,0.05,2
 params=(m, i, λ)
 
 # Run simulation

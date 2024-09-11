@@ -4,8 +4,8 @@ using .syn_maturation_functions
 # Parameters
 total_time = 100.0
 total_pool_size = 1000
-# c, m, e, i = 0.1,0.05,0.5,0.01
-c, m, e, i = 0.2,0.2,0.05,0.05
+c, m, e, i = z
+# c, m, e, i = 0.2,0.2,0.05,0.05
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
