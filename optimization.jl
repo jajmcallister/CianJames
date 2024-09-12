@@ -1,47 +1,113 @@
 using Optimization
+using OptimizationBBO
+using Optimization, OptimizationOptimJL
+using .syn_maturation_functions
 
 
-function optimise_synapticmaturation(x, p)
-    total_pool_size,total_time,kesten_timestep,ε, η, σ_ε, σ_η = p
+
+
+function optimise_synapticmaturation1(x, p)
+    total_pool_size = Int(p[1])
+    total_time = p[2] 
+    kesten_timestep = p[3]
+    ε = p[4]
+    η = p[5]
+    σ_ε = p[6]
+    σ_η = p[7]
     c, m, e, i = x
     rates = (c, m, e, i)
 
-    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
+    # Run your simulation
+    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep)
 
-    time_array_diffeq = sol.t
+    # Extract the mature population at the end of the simulation
+    mature_population_diffeq = sol[2, :]
+
+    # Calculate the error (you want mature_population_diffeq[end] = 500)
+    error = mature_population_diffeq[end] - 500
+
+    # Return the squared error
+    return error^2
+end
+
+function optimise_synapticmaturation2(x, p)
+    total_pool_size = Int(p[1])
+    total_time = p[2] 
+    kesten_timestep = p[3]
+    ε = p[4]
+    η = p[5]
+    σ_ε = p[6]
+    σ_η = p[7]
+    c, m, e, i = x
+    rates = (c, m, e, i)
+
+    # Run your simulation
+    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep)
+
+    # Extract immature and mature populations at the end of the simulation
     immature_population_diffeq = sol[1, :]
     mature_population_diffeq = sol[2, :]
 
-    ratio_mature_to_immature = mature_population_diffeq[end]/immature_population_diffeq[end]
+    # Define the target values for the populations
+    target_N_M = 500
+    target_N_I = 600
 
-    desired_ratio = 2
+    # Calculate the error for both populations
+    error_mature = mature_population_diffeq[end] - target_N_M
+    error_immature = immature_population_diffeq[end] - target_N_I
 
-    error = mature_population_diffeq[end] - 500
+    # Return the combined squared error for both populations
+    return error_mature^2 + error_immature^2
+end
 
-    return error
+function optim3(x,p)
+    total_pool_size = Int(p[1])
+    total_time = p[2] 
+    kesten_timestep = p[3]
+    ε = p[4]
+    η = p[5]
+    σ_ε = p[6]
+    σ_η = p[7]
+    c, m, e, i = x
+    final_I_value = total_pool_size / (1 + m/i + e/c)
+    final_M_value = total_pool_size / (1 + i/m + (e*i)/(c*m))
+    target_M = 500
+    target_I = 400
 
+    errorM = final_M_value-target_M
+    errorI = final_I_value-target_I
+
+    return errorM^2 + errorI^2
 end
 
 
-rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
-x0 = zeros(2)
-p = [1.0, 100.0]
 
+# Define initial guesses for parameters c, m, e, i
+x0 = [0.5, 0.5, 0.1, 0.1]  # Initial guess for [c, m, e, i]
 
-ε, η = 1.0, 0.0
-σ_ε, σ_η = .5, .5
-rates = (c, m, e, i)
+# Define the parameters you want to pass to the objective function
+total_pool_size = 1000  # Example values
+total_time = 100.0
 kesten_timestep = 0.01
+ε = 1.0
+η = 0.
+σ_ε = 0.01
+σ_η = 0.01
+
+p = [total_pool_size, total_time, kesten_timestep, ε, η, σ_ε, σ_η]
 
 
-p = total_pool_size,total_time,kesten_timestep,ε, η, σ_ε, σ_η
-x0 = zeros(4)
-prob = OptimizationProblem(optimise_synapticmaturation, x0, p)
+# Define bounds for the parameters c, m, e, i
+lower_bounds = [0.0, 0.0, 0.0, 0.0]
+upper_bounds = [2.0, 2.0, 2.0, 2.0]
 
+# Set up the optimization problem with bounds
+opt_function = OptimizationFunction(optimise_synapticmaturation2, Optimization.AutoForwardDiff())
+prob = Optimization.OptimizationProblem(opt_function, x0, p, lb=lower_bounds, ub=upper_bounds)
 
-using OptimizationBBO
-prob = OptimizationProblem(optimise_synapticmaturation, x0, p, lb = [0.0, 0.0, 0.0, 0.0], ub = [1.0, 1.0, 1.0, 1.0])
-sol = solve(prob, BBO_adaptive_de_rand_1_bin_radiuslimited())
+# Solve the optimization problem using LBFGS with bounds
+result = Optimization.solve(prob, LBFGS())
 
-z = sol[1], sol[2], sol[3], sol[4]
-
+# Output the results
+println("Optimal parameters (c, m, e, i): ", result.minimizer)
+println("Objective function value: ", result.minimum)

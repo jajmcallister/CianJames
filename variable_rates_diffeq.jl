@@ -1,7 +1,9 @@
+using DifferentialEquations, Distributions, Plots
+using .syn_maturation_functions
 
 # Parameters
 total_time = 200.0
-total_pool_size = 1000
+total_pool_size = 100
 
 
 
@@ -120,7 +122,7 @@ poold = sol[3,:]
 final_I_value = total_pool_size / (1 + m/i + el(total_time)/cr(total_time))
 final_M_value = total_pool_size / (1 + i/m + (el(total_time)*i)/(cr(total_time)*m))
 
-var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
+var_plot = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
 

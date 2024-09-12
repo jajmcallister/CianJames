@@ -219,6 +219,8 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
+    times_in_immature_pop = []
+    times_in_mature_pop = []
 
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
@@ -235,6 +237,10 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
         sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
         current_time += kesten_time_step;
+
+        N_I = max(0, round(Int, N_I))
+        N_M = max(0, round(Int, N_M))
+        P = max(0, round(Int, P))
 
         # Update populations:  0s for synapses in N_I and 1s for in N_M
         synapses = vcat(fill(0, round(Int, N_I)), fill(1, round(Int, N_M)));
