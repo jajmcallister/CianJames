@@ -95,7 +95,7 @@ function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, 
 
     solution = solve(prob);
 
-    return solution, synapse_sizes, synapse_sizes_history, synapses
+    return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
 function kesten_update_var!(sizes, ε, η, σ_ε, σ_η)
@@ -108,11 +108,11 @@ function kesten_update_var!(sizes, ε, η, σ_ε, σ_η)
 end
 
 
-m, i, λ = 0.166,0.05,2
+m, i, λ = 0.2,0.05,2
 params=(m, i, λ)
 
 # Run simulation
-sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var = run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_timestep);
+sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_timestep);
 
 time_array_var = sol.t
 immature_population_var = sol[1, :]
@@ -124,12 +124,24 @@ final_M_value = total_pool_size / (1 + i/m + (el(total_time)*i)/(cr(total_time)*
 
 var_plot = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
-plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
+plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
+
+
+
 
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 hline!([(immature_population_var+mature_population_var)[end]],label=false)
 
 # savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")
+
+
+
+
+# Work out average i value based on average distribution of synapse sizes
+avg_dematuration_rate = i * sum(exp(- size / λ) for size in synapse_sizes_var) / length(synapse_sizes_var)
+
+
+
 
 
 histogram(synapse_sizes_var,xlim=(0,30), label=false)
