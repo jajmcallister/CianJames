@@ -2,7 +2,7 @@ using DifferentialEquations, Distributions, Plots
 using .syn_maturation_functions
 
 # Parameters
-total_time = 200.0
+total_time = 100.0
 total_pool_size = 100
 
 

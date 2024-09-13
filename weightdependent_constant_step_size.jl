@@ -3,27 +3,23 @@ using Distributions
 using Plots
 using .syn_maturation_functions
 
-# Parameters
-N = 1000                    # Number of potential synapses
-dt = 0.01                   # Time step
-T = 100.0                    # Total simulation time
-steps = Int(T / dt)           # Number of steps
+
 
 # Parameters
 total_time = 100.0
-total_pool_size = 1000
-c, m, e, i = 0.2, 0.2, 0.01, 0.05
+total_pool_size = 100
 ε, η = 1, 0
 σ_ε, σ_η = 0.5, 0.5
 rates = (c, m, e, i)
 kesten_time_step = 0.01
+steps = Int(total_time / kesten_time_step) 
 
 # Exponential parameter λ
 A = i
 λ = 2
 
 # States
-pool = N
+pool = total_pool_size
 immature = 0
 mature = 0
 pool_history = []
@@ -42,12 +38,12 @@ synapse_size_history = []
 # Simulation
 for t in 1:steps
     # Transitions from pool to immature
-    pool_to_immature = rand(Binomial(pool, c * dt))
+    pool_to_immature = rand(Binomial(pool, c * kesten_time_step))
     pool -= pool_to_immature
     immature += pool_to_immature
 
     # Transitions from immature to mature
-    immature_to_mature = rand(Binomial(immature, m * dt))
+    immature_to_mature = rand(Binomial(immature, m * kesten_time_step))
     immature -= immature_to_mature
     mature += immature_to_mature
 
@@ -62,7 +58,7 @@ for t in 1:steps
     # Calculate the probability (using exponential) for each mature synapse to become immature
     mature_to_immature_indices = []
     for (i, size) in enumerate(synapse_sizes)
-        prob = A * exp(-size / λ) * dt
+        prob = A * exp(-size / λ) * kesten_time_step
         if rand() < prob
             push!(mature_to_immature_indices, i)
         end
@@ -86,7 +82,7 @@ for t in 1:steps
 
 
     # Transitions from immature to pool
-    immature_to_pool = rand(Binomial(immature, e * dt))
+    immature_to_pool = rand(Binomial(immature, e * kesten_time_step))
     immature -= immature_to_pool
     pool += immature_to_pool
 
@@ -99,13 +95,14 @@ for t in 1:steps
 
 end
 
-time_walks = collect(0:0.01:100)
+time_walks = collect(0:kesten_time_step:total_time)
 
-weight_dep_plot = plot(time_walks, immature_history, lw=3, label="Immature population")
+weight_dep_plot = plot!(time_walks, immature_history, lw=3, label="Immature population")
 plot!(time_walks, mature_history, lw=3, label="Mature population", legend=:right)
-plot!(time_diffs, nis, label="Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
-plot!(time_diffs, nms, label="Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time", ylabel="Population size")
 
+
+# plot!(time_diffs, nis, label="Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+# plot!(time_diffs, nms, label="Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time", ylabel="Population size")
 # plot!(time_array_diffeq, immature_population_diffeq, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 # plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 

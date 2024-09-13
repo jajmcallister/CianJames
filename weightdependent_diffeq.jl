@@ -28,6 +28,6 @@ plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (Dif
 
 time_diffs = collect(0:0.01:100)[1:end-1]
 
-plot(time_diffs, nis, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+plot!(time_diffs, nis, label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_diffs, nms, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
