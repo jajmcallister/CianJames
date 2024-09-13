@@ -1,14 +1,14 @@
 using DifferentialEquations, Random
 
-total_pool_size = 100
+total_pool_size = 1000
 
 function compute_durations(row)
     durations_of_0 = Int[]  # To store lengths of consecutive 0s
     durations_of_1 = Int[]  # To store lengths of consecutive 1s
     durations_of_2 = Int[]  # To store lengths of consecutive 2s
 
-    current_value = row[1]  # Initialize with the first element
-    current_length = 1      # Initialize the length counter
+    current_value = row[1]  # Initialise with the first element
+    current_length = 1      # Initialise length counter
 
     for i in 2:length(row)
         if row[i] == current_value
@@ -47,7 +47,7 @@ function get_durations_from_matrix(M)
     dur1s = []
     dur2s = []
 
-    for i in 1:no_rows
+    for i in 1:no_rows # run through all the matrix rows and store the durations of 0s, 1s, 2s
         d0s, d1s, d2s = compute_durations(M[i,:])
         append!(dur0s,d0s)
         append!(dur1s, d1s)
@@ -57,7 +57,7 @@ function get_durations_from_matrix(M)
     return dur0s, dur1s, dur2s
 end
 
-function track_times_new_attempt(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
+function track_times_constant_rates(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
 
     pool = total_pool_size
     steps = trunc(Int, total_time / kesten_time_step)
@@ -198,7 +198,7 @@ c, m, e, i = 0.2, 0.2, 0.1, 0.05
 rates = c, m, e, i
 
 
-ih, mh, state_records, syn_sizes = track_times_new_attempt(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
+ih, mh, state_records, syn_sizes = track_times_constant_rates(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
 
 
 final_I_value = total_pool_size / (1 + m/i + e/c)
@@ -210,7 +210,7 @@ plot!(0:0.01:100, ih+mh)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
-plot(sum(vcat(state_records)))
+plot(state_records[1,:])
 
 d0, d1, d2 = get_durations_from_matrix(state_records)
 
@@ -222,7 +222,7 @@ h2 = histogram(d2 .* kesten_time_step)
 plot(h0,h1,h2, layout=(3,1))
 
 
-
+state_records[:,1]
 #######
 #######
 # Variables rates
