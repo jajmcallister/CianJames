@@ -222,7 +222,20 @@ h2 = histogram(d2 .* kesten_time_step)
 plot(h0,h1,h2, layout=(3,1))
 
 
-state_records[:,1]
+
+
+# Count the number of 1s in each column
+ones_per_column = sum(state_records .== 1, dims=1)
+twos_per_column = sum(state_records .== 2, dims=1)
+
+# Plot the result
+plot(0:0.01:99.99, ones_per_column[:], xlabel="Column", ylabel="Number of 1s", label="1s in each column", lw=2)
+plot!(0:0.01:99.99, twos_per_column[:])
+
+
+
+
+
 #######
 #######
 # Variables rates
