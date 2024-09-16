@@ -3,9 +3,9 @@ using .syn_maturation_functions
 
 # Parameters
 total_time = 100.0
-total_pool_size = 100
-# c, m, e, i = 1.3333327016873797, 0.8912588716692468, 2.4384797141525715e-15, 1.089316398653236
-c, m, e, i = 0.2,0.2,0.05,0.05
+total_pool_size = 1000
+c, m, e, i = 0.6820606226870286, 0.3896891612648679, 1.1943516162074415, 1.2748396318634099
+# c, m, e, i = 0.2,0.2,0.01,0.05
 ε, η = 1.0, 0.0
 σ_ε, σ_η = .5, .5
 rates = (c, m, e, i)
@@ -24,6 +24,7 @@ mature_population_diffeq = sol[2, :]
 final_I_value = total_pool_size / (1 + m/i + e/c)
 final_M_value = total_pool_size / (1 + i/m + (e*i)/(c*m))
 
+final_M_value/final_I_value
 
 diffeqplot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equation version of model", label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")

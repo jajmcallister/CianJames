@@ -1,7 +1,7 @@
 using DifferentialEquations, Random, Distributions, Plots
 using .syn_maturation_functions
 
-total_pool_size = 100
+total_pool_size = 1000
 
 function compute_durations(row)
     durations_of_0 = Int[]  # To store lengths of consecutive 0s
@@ -190,7 +190,7 @@ end
 
 
 # Define transition rates
-c, m, e, i = 0.2, 0.2, 0.1, 0.05
+c, m, e, i = 0.2, 0.2, 0.01, 0.05
 rates = c, m, e, i
 lambda = 2
 
@@ -206,28 +206,38 @@ plot!(0:0.01:total_time, mh)
 plot!(0:0.01:total_time, ih+mh)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
+using Plots.PlotMeasures
 
-plot(state_records[1,:])
+durationplot = plot(0:0.01:99.99,state_records[1,:],yticks=([0,1,2],["Resource pool", "Immature", "Mature"]), xlabel="Time", bottommargin=5mm)
+
+# savefig(durationplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration.png")
 
 d0, d1, d2 = get_durations_from_matrix(state_records)
 
-h0 = histogram(d0 .* kesten_timestep)
-h1 = histogram(d1 .* kesten_timestep)
-h2 = histogram(d2 .* kesten_timestep)
+mean(d0 .* kesten_timestep)
+mean(d1 .* kesten_timestep)
+mean(d2 .* kesten_timestep)
 
 
-plot(h0,h1,h2, layout=(3,1))
+bins = 0:2:100
+h0 = histogram(d0 .* kesten_timestep,label=false, bins=bins,title="Resource pool")
+h1 = histogram(d1 .* kesten_timestep,label=false, bins=bins,title="Immature")
+h2 = histogram(d2 .* kesten_timestep,label=false, bins=bins,title="Mature", xlabel="Time in state")
+
+
+duration_hist = plot(h0,h1,h2, layout=(3,1))
+
+savefig(duration_hist, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration_hist.png")
 
 
 
+# # Count the number of 1s and 2s in each column
+# ones_per_column = sum(state_records .== 1, dims=1)
+# twos_per_column = sum(state_records .== 2, dims=1)
 
-# Count the number of 1s in each column
-ones_per_column = sum(state_records .== 1, dims=1)
-twos_per_column = sum(state_records .== 2, dims=1)
-
-# Plot the result
-plot(0:0.01:99.99, ones_per_column[:], xlabel="Column", ylabel="Number of 1s", label="1s in each column", lw=2)
-plot!(0:0.01:99.99, twos_per_column[:])
+# # Plot the result
+# plot(0:0.01:99.99, ones_per_column[:], xlabel="Column", ylabel="Number of 1s", label="1s in each column", lw=2)
+# plot!(0:0.01:99.99, twos_per_column[:])
 
 
 
@@ -354,7 +364,7 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         push!(pool_history, pool)
         push!(immature_history, immature)
         push!(mature_history, mature)
-######
+
         function safe_sample(list, num_samples; replace=false)
             return sample(list, min(num_samples, length(list)), replace=false)
         end
@@ -423,7 +433,7 @@ ih_var, mh_var, state_records_var, syn_sizes_var = track_times_variable_rates(to
 final_I_value = total_pool_size / (1 + m/i + elim[end]/creat[end])
 final_M_value = total_pool_size / (1 + i/m + (elim[end]*i)/(creat[end]*m))
 
-plot!(0:0.01:total_time, ih_var)
+plot(0:0.01:total_time, ih_var)
 plot!(0:0.01:total_time, mh_var)
 plot!(0:0.01:total_time, ih_var+mh_var)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
@@ -466,3 +476,26 @@ end
 plot!(0:0.01:total_time, mean(ih_trials_var), ribbon=std(ih_trials_var))
 plot!(0:0.01:total_time, mean(mh_trials_var), ribbon=std(mh_trials_var))
 plot!(0:0.01:total_time, mean(ih_trials_var) .+ mean(mh_trials_var), legend=false)
+
+
+
+########
+# Comparing constant v variable rates
+########
+
+ih, mh, state_records, syn_sizes = track_times_constant_rates(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
+ih_var, mh_var, state_records_var, syn_sizes_var = track_times_variable_rates(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
+
+d0, d1, d2 = get_durations_from_matrix(state_records)
+d0_var, d1_var, d2_var = get_durations_from_matrix(state_records_var)
+
+h0 = histogram(d0 .* kesten_timestep,label=false, title="Constant E&C Rates \n Pool", xlim=(0,100))
+h1 = histogram(d1 .* kesten_timestep,label=false, title="Immature", xlim=(0,100))
+h2 = histogram(d2 .* kesten_timestep,label=false, title="Mature", xlim=(0,100))
+
+h0_var = histogram(d0_var .* kesten_timestep,label=false, title="Variable E&C rates \n Pool", xlim=(0,100))
+h1_var = histogram(d1_var .* kesten_timestep,label=false, title="Immature", xlim=(0,100))
+h2_var = histogram(d2_var .* kesten_timestep,label=false,title="Mature", xlim=(0,100))
+
+
+plot(h0,h0_var,h1,h1_var,h2,h2_var,layout=(3,2))

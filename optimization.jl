@@ -22,9 +22,9 @@ function optimise_synapticmaturation1(x, p)
 
     # Extract the mature population at the end of the simulation
     mature_population_diffeq = sol[2, :]
-
-    # Calculate the error (you want mature_population_diffeq[end] = 500)
-    error = mature_population_diffeq[end] - 500
+    target = 100
+    # Calculate the error
+    error = mature_population_diffeq[end] - target
 
     # Return the squared error
     return error^2
@@ -83,7 +83,7 @@ end
 
 
 # Define initial guesses for parameters c, m, e, i
-x0 = [0.5, 0.5, 0.1, 0.1]  # Initial guess for [c, m, e, i]
+x0 = [0.5, 0.5, 0.1, 0.1]
 
 # Define the parameters you want to pass to the objective function
 total_pool_size = 1000  # Example values
@@ -102,7 +102,7 @@ lower_bounds = [0.0, 0.0, 0.0, 0.0]
 upper_bounds = [2.0, 2.0, 2.0, 2.0]
 
 # Set up the optimization problem with bounds
-opt_function = OptimizationFunction(optimise_synapticmaturation2, Optimization.AutoForwardDiff())
+opt_function = OptimizationFunction(optimise_synapticmaturation1, Optimization.AutoForwardDiff())
 prob = Optimization.OptimizationProblem(opt_function, x0, p, lb=lower_bounds, ub=upper_bounds)
 
 # Solve the optimization problem using LBFGS with bounds
