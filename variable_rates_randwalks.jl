@@ -3,20 +3,23 @@ total_time = 100.0
 total_pool_size = 100
 m, i, λ = 0.1,0.05,2
 
-el(t) = 0.1 * exp(-t / 10) + 0.2
-cr(t) = 0.2 * exp(-t / 30) + 0.2
+
+elimination_func(t) = 0.1 * exp(-t / 10) + 0.2
+creation_func(t) = 0.2 * exp(-t / 30) + 0.2
+
 
 ε, η = 1, 0
 σ_ε, σ_η = 0.5, 0.5
-rates = creat, m, elim, i
+rates_var = creat, m, elim, i
 kesten_time_step = 0.01
+
 
 # Exponential parameter λ
 A = i
 λ = 2
 
 
-function rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_time_step)
+function rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_timestep)
     steps = Int(total_time / kesten_timestep)   
     pool = total_pool_size
     immature = 0
@@ -80,7 +83,6 @@ function rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_ti
 
 
         # Transitions from immature to pool
-        e1 = el(t / kesten_time_step)
         immature_to_pool = rand(Binomial(immature, eli[t] * kesten_timestep))
         immature -= immature_to_pool
         pool += immature_to_pool
@@ -97,16 +99,28 @@ function rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_ti
     return immature_history, mature_history, synapse_sizes
 end
 
+
+
+
+
+
+
+
+
+
+
+
+
 time_walks = collect(0:0.01:total_time)
 
-immature_history, mature_history, syn_sizes_rand_var = rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_time_step)
+immature_history, mature_history, syn_sizes_rand_var = rand_walks_variable_rates(total_pool_size, total_time, rates_var, kesten_timestep)
 
-var_plot_diffeq = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
+var_plot_diffeq = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
 
 
-var_plot_randwalks = plot(time_walks, immature_history, lw=1, label="Immature population")
+var_plot_randwalks = plot!(time_walks, immature_history, lw=1, label="Immature population")
 plot!(time_walks, mature_history, lw=1, label="Mature population", legend=:right)
 plot!(time_walks, immature_history+mature_history)
 
@@ -120,15 +134,17 @@ im_hist = []
 mat_hist = []
 
 for i in 1:100
-    immature_history, mature_history, syn_sizes_rand_var = rand_walks_variable_rates(total_pool_size, total_time, rates, kesten_time_step)
+    immature_history, mature_history, syn_sizes_rand_var = rand_walks_variable_rates(total_pool_size, total_time, rates_var, kesten_timestep)
     push!(im_hist, immature_history)
     push!(mat_hist, mature_history)
 end
 
-plot(0:kesten_timestep:total_time,mean(im_hist))
-plot!(0:kesten_timestep:total_time,mean(mat_hist))
+plot(0:kesten_timestep:total_time, mean(im_hist), ribbon=std(im_hist))
+plot!(0:kesten_timestep:total_time, mean(mat_hist), ribbon=std(mat_hist))
 plot!(0:kesten_timestep:total_time, mean(im_hist) .+ mean(mat_hist))
 
 plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
+hline!([immature_population_var[end]+mature_population_var[end]])
+

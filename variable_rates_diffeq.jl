@@ -5,13 +5,12 @@ using .syn_maturation_functions
 total_time = 100.0
 total_pool_size = 100
 
+elimination_func(t) = 0.1 * exp(-t / 10) + 0.2
+creation_func(t) = 0.2 * exp(-t / 30) + 0.2
 
-
-el(t) = 0.1 * exp(-t / 10) + 0.2
-cr(t) = 0.2 * exp(-t / 30) + 0.2
 
 function synapse_dynamics_var!(du, u, p, t)
-    m, i, λ, synapse_sizes = p 
+    c_t, m, e_t, i, λ, synapse_sizes = p 
     N_I, N_M, N_P = u
     A = i
 
@@ -24,8 +23,8 @@ function synapse_dynamics_var!(du, u, p, t)
     end
     
     # Apply time-dependent e(t) and c(t)
-    e_t = el(t)
-    c_t = cr(t)
+    e_t = elimination_func(t)
+    c_t = creation_func(t)
 
     du[1] = c_t * N_P - (m + e_t) * N_I + (dematuration_rate) * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
@@ -47,13 +46,17 @@ function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, 
     Mhist = []
 
     # Define ODE problem
-    prob = ODEProblem(synapse_dynamics_var!, u0, tspan, p);
+    # prob = ODEProblem(synapse_dynamics_var!, u0, tspan, p);
 
     current_time = 0.0;
 
-    while current_time < total_time
+    prams = creation_func(current_time),m,elimination_func(current_time),i, λ, synapse_sizes
+    probb = ODEProblem(synapse_dynamics_var!, u0, tspan, prams);
 
-        sol = solve(prob, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
+    while current_time < total_time
+        prams = creation_func(current_time),m,elimination_func(current_time),i, λ, synapse_sizes
+        probb = ODEProblem(synapse_dynamics_var!, u0, tspan, prams);
+        sol = solve(probb, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
         push!(Ihist, N_I)
         push!(Mhist,  N_M)
@@ -84,7 +87,7 @@ function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, 
 
     end
 
-    solution = solve(prob);
+    solution = solve(probb);
 
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
@@ -119,11 +122,14 @@ plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="b
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
+plot!(0:0.01:99.99, ih)
+plot!(0:0.01:99.99, mh)
 
-
-
+hline!([immature_population_var[end] + mature_population_var[end]])
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 hline!([(immature_population_var+mature_population_var)[end]],label=false)
+
+
 
 # savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")
 
