@@ -64,16 +64,11 @@ v = @. m * x - i * y
 q = quiver(x, y, quiver=(0.3*u, 0.3*v),title="Phase plane", xlabel="I", ylabel="M")
 plot!(N_I1, N_M1, lw=2, label="Trajectory 1")
 plot!(N_I2, N_M2, lw=2, label="Trajectory 2")
-plot(N_I3, N_M3, lw=2, label="Trajectory 3")
+plot!(N_I3, N_M3, lw=2, label="Trajectory 3")
 plot!(N_I4, N_M4, lw=2, label="Trajectory 4")
 scatter!([final_I_value],[final_M_value],label="Steady state solution")
 
 # savefig(q, "C://Users/B00955735/OneDrive - Ulster University/Desktop/vectorfield.png")
-
-plot(N_M4)
-plot!(N_I4)
-plot!(N_M3+N_I3)
-
 
 
 # nullclines
