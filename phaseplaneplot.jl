@@ -5,10 +5,13 @@ using Plots
 function phase_synapse_dynamics!(du, u, p, t)
     c, m, e, i = p  # Correctly unpack the parameters
     N_I, N_M, N_P = u
+
+    e_t = elimination_func(t)
+    c_t = creation_func(t)
     
-    du[1] = c * N_P - (e + m) * N_I + i * N_M  # dN_I/dt
+    du[1] = c_t * N_P - (e_t + m) * N_I + i * N_M  # dN_I/dt
     du[2] = m * N_I - i * N_M                  # dN_M/dt
-    du[3] = e * N_I - c * N_P                  # dN_P/dt
+    du[3] = e_t * N_I - c_t * N_P                  # dN_P/dt
     # du[3] = - du[1] - du[2] 
 end
 
@@ -61,7 +64,7 @@ v = @. m * x - i * y
 q = quiver(x, y, quiver=(0.3*u, 0.3*v),title="Phase plane", xlabel="I", ylabel="M")
 plot!(N_I1, N_M1, lw=2, label="Trajectory 1")
 plot!(N_I2, N_M2, lw=2, label="Trajectory 2")
-plot!(N_I3, N_M3, lw=2, label="Trajectory 3")
+plot(N_I3, N_M3, lw=2, label="Trajectory 3")
 plot!(N_I4, N_M4, lw=2, label="Trajectory 4")
 scatter!([final_I_value],[final_M_value],label="Steady state solution")
 
