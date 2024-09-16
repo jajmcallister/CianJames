@@ -25,7 +25,7 @@ final_I_value = total_pool_size / (1 + m/i + e/c)
 final_M_value = total_pool_size / (1 + i/m + (e*i)/(c*m))
 
 
-diffeqplot = plot(time_array_diffeq, immature_population_diffeq, title="Differential equation version of model", label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
+diffeqplot = plot!(time_array_diffeq, immature_population_diffeq, title="Differential equation version of model", label = "Immature Synapses (DiffEq)", color="red", lw=3, legend=:right)
 plot!(time_array_diffeq, mature_population_diffeq, label = "Mature Synapses (DiffEq)", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 plot!(time_array_diffeq, immature_population_diffeq+mature_population_diffeq, lw=3, label="Mature+Immature")
 

@@ -11,8 +11,8 @@ total_pool_size = 100
 ε, η = 1, 0
 σ_ε, σ_η = 0.5, 0.5
 rates = (c, m, e, i)
-kesten_time_step = 0.01
-steps = Int(total_time / kesten_time_step) 
+kesten_timestep = 0.01
+steps = Int(total_time / kesten_timestep) 
 
 # Exponential parameter λ
 A = i
@@ -38,12 +38,12 @@ synapse_size_history = []
 # Simulation
 for t in 1:steps
     # Transitions from pool to immature
-    pool_to_immature = rand(Binomial(pool, c * kesten_time_step))
+    pool_to_immature = rand(Binomial(pool, c * kesten_timestep))
     pool -= pool_to_immature
     immature += pool_to_immature
 
     # Transitions from immature to mature
-    immature_to_mature = rand(Binomial(immature, m * kesten_time_step))
+    immature_to_mature = rand(Binomial(immature, m * kesten_timestep))
     immature -= immature_to_mature
     mature += immature_to_mature
 
@@ -58,7 +58,7 @@ for t in 1:steps
     # Calculate the probability (using exponential) for each mature synapse to become immature
     mature_to_immature_indices = []
     for (i, size) in enumerate(synapse_sizes)
-        prob = A * exp(-size / λ) * kesten_time_step
+        prob = A * exp(-size / λ) * kesten_timestep
         if rand() < prob
             push!(mature_to_immature_indices, i)
         end
@@ -82,7 +82,7 @@ for t in 1:steps
 
 
     # Transitions from immature to pool
-    immature_to_pool = rand(Binomial(immature, e * kesten_time_step))
+    immature_to_pool = rand(Binomial(immature, e * kesten_timestep))
     immature -= immature_to_pool
     pool += immature_to_pool
 
@@ -95,9 +95,10 @@ for t in 1:steps
 
 end
 
-time_walks = collect(0:kesten_time_step:total_time)
+time_walks = collect(0:kesten_timestep:total_time)
 
-weight_dep_plot = plot!(time_walks, immature_history, lw=3, label="Immature population")
+mature_history
+weight_dep_plot = plot(time_walks, immature_history, lw=3, label="Immature population")
 plot!(time_walks, mature_history, lw=3, label="Mature population", legend=:right)
 
 

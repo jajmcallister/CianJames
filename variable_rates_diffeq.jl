@@ -10,14 +10,6 @@ total_pool_size = 100
 el(t) = 0.1 * exp(-t / 10) + 0.2
 cr(t) = 0.2 * exp(-t / 30) + 0.2
 
-elim = el.(1:100)
-creat = cr.(1:100)
-
-varrates = plot(elim, label="Elimination rate", ylim=(0,0.5), lw=2)
-plot!(creat, label="Creation rate", lw=2, xlabel="time")
-
-# savefig(varrates, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varrates.png")
-
 function synapse_dynamics_var!(du, u, p, t)
     m, i, λ, synapse_sizes = p 
     N_I, N_M, N_P = u
@@ -34,7 +26,6 @@ function synapse_dynamics_var!(du, u, p, t)
     # Apply time-dependent e(t) and c(t)
     e_t = el(t)
     c_t = cr(t)
-    # m = dematuration_rate
 
     du[1] = c_t * N_P - (m + e_t) * N_I + (dematuration_rate) * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
@@ -122,8 +113,10 @@ poold = sol[3,:]
 final_I_value = total_pool_size / (1 + m/i + el(total_time)/cr(total_time))
 final_M_value = total_pool_size / (1 + i/m + (el(total_time)*i)/(cr(total_time)*m))
 
-var_plot = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
+
+var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
 
