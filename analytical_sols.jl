@@ -46,7 +46,5 @@ immature_values = map(r -> r[1], results)  # Extract imm values
 mature_values = map(r -> r[2], results)  # Extract mmm values
 
 # Plot the results
-plot!(time_for_plot, immature_values, label="imm", xlabel="Time", ylabel="Value", legend=:topright)
+plot(time_for_plot, immature_values, label="imm", xlabel="Time", ylabel="Value", legend=:topright)
 plot!(time_for_plot, mature_values, label="mat", ylim=(0,1000),legend=false)
-
-eigenvector1[1]
