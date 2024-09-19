@@ -204,7 +204,7 @@ final_M_value = total_pool_size / (1 + i/m + (e*i)/(c*m))
 plot(0:0.01:total_time, ih)
 plot!(0:0.01:total_time, mh)
 plot!(0:0.01:total_time, ih+mh)
-hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
+# hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 using Plots.PlotMeasures
 

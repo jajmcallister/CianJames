@@ -6,15 +6,15 @@ total_time = 100.0
 total_pool_size = 1000
 # c, m, e, i = 0.6820606226870286, 0.3896891612648679, 1.1943516162074415, 1.2748396318634099
 c, m, e, i = 0.2,0.2,0.01,0.05
-ε, η = 1.0, 0.0
-σ_ε, σ_η = .5, .5
+ε, η = .985, 0.015
+σ_ε, σ_η = .05, .05
 rates = (c, m, e, i)
 kesten_timestep = 0.01
 # Run simulation
 sol, synapse_sizes_diffeq1, synapses_diffeq1 = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
 
 # Plot the distribution of synapse sizes
-hist_diffeq = histogram(synapse_sizes_diffeq1, label="Synapse Sizes", title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false, xlim=(0,30))
+hist_diffeq = histogram(synapse_sizes_diffeq1, label="Synapse Sizes",title="Distribution of Synapse Sizes (DiffEqs)", xlabel="Size", ylabel="Frequency",legend=false, xlim=(0,10))
 
 # Extract the solution
 time_array_diffeq = sol.t
