@@ -79,8 +79,8 @@ plot!(time_for_plot, immature_values+mature_values, lw=3)
 
 
 
-
-
+c,m,e,i = rand(0:100),rand(0:100),rand(0:100),rand(0:100)
+e^2+m^2+i^2+c^2+ 2*(e*c + m*c + i*m) - 2*(i*e + i*c + e*m)
 
 ##########
 
