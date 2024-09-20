@@ -36,6 +36,8 @@ function analytical_solution(t,c,m,e,i)
     
 end
 
+
+
 matrix = [-(e+m+c) (i-c) ; m -i]
 
 eigenvalues,eigenvectors = eigen(matrix)
@@ -45,6 +47,19 @@ inhomogeneous_term = [c*total_pool_size 0]
 particular_soln = matrix \ - inhomogeneous_term'
 
 constants = eigenvectors \ - particular_soln
+
+
+constant1 = - (eigenvalues[2]* c*total_pool_size * (i+ eigenvalues[1]))/((eigenvalues[1]-eigenvalues[2])*(e*i+c*i+c*m))
+constant2 = - (eigenvalues[1]* c*total_pool_size * (i+ eigenvalues[2]))/((eigenvalues[2]-eigenvalues[1])*(e*i+c*i+c*m))
+
+(i+m+eigenvalues[2])/(i+eigenvalues[1]+m)
+
+c,m,e,i=rand(0:100),rand(0:100),rand(0:100),rand(0:100)
+(i+m-e-c)^2-(e+m+c+i)^2+4*(e*i+i*c+m*c)
+
+
+(i+m-e-c-sqrt((e+m+c+i)^2-4*(e*i+i*c+m*c)))/(i+m-e-c+sqrt((e+m+c+i)^2-4*(e*i+i*c+m*c)))
+
 
 
 eigvalue1 = eigenvalues[1]
@@ -66,10 +81,7 @@ mature_values = map(r -> r[2], results)  # Extract mmm values
 # Plot the results
 plot(time_for_plot, immature_values, label="imm", xlabel="Time", ylabel="Value", legend=:topright)
 plot!(time_for_plot, mature_values, label="mat", ylim=(0,1000),legend=false)
-
-
-
-
+plot!(time_for_plot, immature_values+mature_values, lw=3)
 
 
 
@@ -128,5 +140,7 @@ for m in m_values, c in c_values, e in e_values, i in i_values
         println("Found positive kappa: m=$m, c=$c, e=$e, i=$i, kappa=$kappa")
     end
 end
+
+
 
 
