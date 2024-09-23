@@ -2,11 +2,19 @@ using DifferentialEquations, Distributions, Plots
 using .syn_maturation_functions
 
 # Parameters
-total_time = 100.0
+total_time = 200.0
 total_pool_size = 1000
 
-elimination_func(t) = 0.8 * exp(-t / 10) + 0.2
-creation_func(t) = 0.4 * exp(-t / 30) + 0.2
+a1 = 0.4
+k1 = 1/30
+b1 = 0.2
+a2 = 0.8
+k2 = 1/10
+b2 = 0.2
+
+creation_func(t) = a1 * exp(-t * k1) + b1
+elimination_func(t) = a2 * exp(-t * k2) + b2
+
 
 plot(elimination_func.(0:1:100))
 plot!(creation_func.(0:1:100), ylim=(0,1))
