@@ -77,29 +77,36 @@ plot!(time_for_plot, immature_values+mature_values, lw=3)
 
 
 ##########
+# simplified setup
 
+# Parameters: a1, k1, b1, a2, k2, b2, total_pool
+a1, k1, b1, a2, k2, b2, total_pool_size = rand(),rand(),rand(),rand(),rand(),rand(),total_pool_size
 
 
 simple_setup(t) = (b1*total_pool_size*exp(k2*t+k1*t)+a1*total_pool_size*exp(k2*t))/((b2+b1)*exp(k2*t+k1*t)+a1*exp(k2*t)+a2*exp(k1*t))
-plot(simple_setup.(0:1:200))
-vline!([tt])
+
+tt = ((1/(k1-k2))*log((a1*b2*k1)/(a2*b1*k2)))
+
+
+plot(simple_setup.(0:1:100))
+vline!([34])
 
 # Define the ODE
 function ode1!(du, u, p, t)
     a1, k1, b1, a2, k2, b2, l = p
-    du[1] = (a1 * exp(-k1 * t) + b1) * l - (a1 * exp(-k1 * t) + b1 + a2 * exp(-k2 * t) + b2) * u[1]
+    # du[1] = (a1 * exp(-k1 * t) + b1) * l - (a1 * exp(-k1 * t) + b1 + a2 * exp(-k2 * t) + b2) * u[1]
+    du[1] = (b1) * l - (b1 + b2) * u[1]
+
 end
 
 
-# Parameters: a1, k1, b1, a2, k2, b2, total_pool
-a1, k1, b1, a2, k2, b2, total_pool_size = rand(),rand(),rand(),rand(),rand(),rand(),total_pool_size
 p = [a1, k1, b1, a2, k2, b2, total_pool_size]  # Example parameter values
 
 # Initial condition for y(0)
 u0 = [0.0]
 
 # Time span for the solution
-tspan = (0.0, 200.0)
+tspan = (0.0, 100.0)
 
 # Define the ODE problem
 prob = ODEProblem(ode1!, u0, tspan, p)
@@ -109,23 +116,8 @@ sol = solve(prob)
 sol.u
 
 # Plot the solution for y(t)
-plot!(sol.t, vcat(sol.u...), label="y(t)", xlabel="t", ylabel="y(t)", title="Solution to the ODE")
+plot(sol.t, sol[1,:],label="y(t)", xlabel="t", ylabel="y(t)", title="Solution to the ODE")
 
-using Symbolics
+fail(t) = ((-b1*total_pool_size)/(b1+b2))*exp(-t*(b1+b2))+(b1*total_pool_size)/(b1+b2)
 
-# Define the variables and parameters
-@variables t k1 k2 a1 a2 b1 b2 total_pool_size
-
-# Define the numerator and denominator
-u = b1 * total_pool_size * exp((k2 + k1) * t) + a1 * total_pool_size * exp(k2 * t)
-v = (b2 + b1) * exp((k2 + k1) * t) + a1 * exp(k2 * t) + a2 * exp(k1 * t)
-
-# Apply the quotient rule: diff(u(t)/v(t))
-f = u / v
-f_prime = expand_derivatives(Differential(t)(f))
-
-f_prime_func(t) = (a1*k2*total_pool_size*exp(k2*t) + b1*(k1 + k2)*total_pool_size*exp((k1 + k2)*t)) / (a1*exp(k2*t) + a2*exp(k1*t) + (b1 + b2)*exp((k1 + k2)*t)) - (a1*k2*exp(k2*t) + a2*k1*exp(k1*t) + (b1 + b2)*(k1 + k2)*exp((k1 + k2)*t))*((a1*total_pool_size*exp(k2*t) + b1*total_pool_size*exp((k1 + k2)*t)) / ((a1*exp(k2*t) + a2*exp(k1*t) + (b1 + b2)*exp((k1 + k2)*t))^2))
-
-plot(f_prime_func.(0:1:100))
-
-tt = (1/(k1-k2))*log((a1*b2*k1)/(a2*b1*k2))
+plot!(0:1:100, fail.(0:100))

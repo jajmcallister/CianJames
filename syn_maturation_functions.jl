@@ -219,8 +219,7 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
-    times_in_immature_pop = []
-    times_in_mature_pop = []
+    synapse_size_history = []
 
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
@@ -258,12 +257,13 @@ function run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε
         end
 
         kesten_update!(synapse_sizes,ε, η, σ_ε, σ_η)
+        push!(synapse_size_history, synapse_sizes)
 
     end
 
     solution = solve(prob);
 
-    return solution, synapse_sizes, synapses
+    return solution, synapse_sizes, synapse_size_history, synapses
 end
 
 

@@ -16,8 +16,8 @@ creation_func(t) = a1 * exp(-t * k1) + b1
 elimination_func(t) = a2 * exp(-t * k2) + b2
 
 
-plot(elimination_func.(0:1:100))
-plot!(creation_func.(0:1:100), ylim=(0,1))
+plot(elimination_func.(0:1:200))
+plot!(creation_func.(0:1:200), ylim=(0,1))
 
 function synapse_dynamics_var!(du, u, p, t)
     c_t, m, e_t, i, λ, synapse_sizes = p 
