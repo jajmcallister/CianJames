@@ -208,7 +208,7 @@ plot!(0:0.01:total_time, ih+mh)
 
 using Plots.PlotMeasures
 
-durationplot = plot(0:0.01:99.99,state_records[1,:],yticks=([0,1,2],["Resource pool", "Immature", "Mature"]), xlabel="Time", bottommargin=5mm)
+durationplot = plot(0:0.01:99.99,state_records[5,:],yticks=([0,1,2],["Resource pool", "Immature", "Mature"]), xlabel="Time", bottommargin=5mm)
 
 # savefig(durationplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration.png")
 
