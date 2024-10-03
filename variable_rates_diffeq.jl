@@ -5,8 +5,8 @@ using .syn_maturation_functions
 total_time = 200.0
 total_pool_size = 1000
 
-a1 = 0.4
-k1 = 1/30
+a1 = 0.8
+k1 = 1/50
 b1 = 0.2
 a2 = 0.8
 k2 = 1/10
@@ -15,9 +15,10 @@ b2 = 0.2
 creation_func(t) = a1 * exp(-t * k1) + b1
 elimination_func(t) = a2 * exp(-t * k2) + b2
 
+plot(creation_func.(0:1:200), ylim=(0,1), label="creation")
+plot!(elimination_func.(0:1:200), label="elimination")
 
-plot(elimination_func.(0:1:200))
-plot!(creation_func.(0:1:200), ylim=(0,1))
+
 
 function synapse_dynamics_var!(du, u, p, t)
     c_t, m, e_t, i, λ, synapse_sizes = p 
