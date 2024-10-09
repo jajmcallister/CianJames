@@ -5,7 +5,7 @@
 # Parameters: a1, k1, b1, a2, k2, b2, total_pool
 a1, k1, b1, a2, k2, b2, total_pool_size = rand(),rand(),rand(),rand(),rand(),rand(),total_pool_size
 
-finaltime = 500
+finaltime = 100
 # simple_setup(t) = (b1*total_pool_size*exp(k2*t+k1*t)+a1*total_pool_size*exp(k2*t))/((b2+b1)*exp(k2*t+k1*t)+a1*exp(k2*t)+a2*exp(k1*t))
 
 simple_setup2(t) = - ((a1 * exp(-t * k1) + b1)*total_pool_size)/((a1 * exp(-t * k1) + b1) + a2 * exp(-t * k2) + b2)*exp(-(((a1 * exp(-t * k1) + b1)+a2 * exp(-t * k2) + b2))*t) +  ((a1 * exp(-t * k1) + b1)*total_pool_size)/((a1 * exp(-t * k1) + b1) + a2 * exp(-t * k2) + b2)
@@ -138,9 +138,10 @@ y_particular(t) = (total_pool_size * a1) / (k1 + b1 + b2) * exp(-k1 * t) +
 
 y_general(t) = y_homogeneous(t) + y_particular(t) 
 
-plot!(0:0.1:100, y_general.(0:0.1:100))
+plot(0:0.1:100, full_soln_f.(0:0.1:100))
+plot!(sol.t, sol[1,:], label="y(t)", xlabel="t", ylabel="y(t)", title="Solution to the ODE")
 
-total_pool_size
+
 
 
 
