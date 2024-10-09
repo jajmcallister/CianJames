@@ -208,7 +208,7 @@ plot!(0:0.01:total_time, ih+mh)
 
 using Plots.PlotMeasures
 
-durationplot = plot(0:0.01:99.99,state_records[5,:],yticks=([0,1,2],["Resource pool", "Immature", "Mature"]), xlabel="Time", bottommargin=5mm)
+durationplot = plot(0:0.01:99.99,state_records[4,:],yticks=([0,1,2],["Resource pool", "Immature", "Mature"]), xlabel="Time", bottommargin=5mm)
 
 # savefig(durationplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration.png")
 
@@ -259,13 +259,6 @@ plot!(0:0.01:total_time, mean(mh_trials), ribbon=std(mh_trials))
 plot!(0:0.01:total_time, mean(ih_trials) .+ mean(mh_trials))
 
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
-
-
-
-
-
-
-
 
 
 
@@ -333,6 +326,7 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         # 3 Transitions from mature to immature
         # Calculate the probability (using exponential) for each mature synapse to become immature
         mature_to_immature_indices = []
+        A = i
         for (id, size) in enumerate(synapse_sizes)
             prob = A * exp(-size / lambda) * kesten_timestep
             if rand() < prob
@@ -476,6 +470,11 @@ end
 plot!(0:0.01:total_time, mean(ih_trials_var), ribbon=std(ih_trials_var))
 plot!(0:0.01:total_time, mean(mh_trials_var), ribbon=std(mh_trials_var))
 plot!(0:0.01:total_time, mean(ih_trials_var) .+ mean(mh_trials_var), legend=false)
+
+
+
+
+
 
 
 

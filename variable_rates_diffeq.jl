@@ -2,14 +2,14 @@ using DifferentialEquations, Distributions, Plots
 using .syn_maturation_functions
 
 # Parameters
-total_time = 200.0
-total_pool_size = 1000
+total_time = 100.0
+total_pool_size = 100
 
 a1 = 0.8
-k1 = 1/50
+k1 = 1/10
 b1 = 0.2
 a2 = 0.8
-k2 = 1/10
+k2 = 1/5
 b2 = 0.2
 
 creation_func(t) = a1 * exp(-t * k1) + b1
@@ -126,8 +126,6 @@ poold = sol[3,:]
 
 final_I_value = total_pool_size / (1 + m/i + elimination_func(total_time)/creation_func(total_time))
 final_M_value = total_pool_size / (1 + i/m + (elimination_func(total_time)*i)/(creation_func(total_time)*m))
-
-
 
 var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
