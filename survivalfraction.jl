@@ -80,10 +80,10 @@ adulthood_survival_fraction = compute_survival_fraction(state_records_var[:,adul
 
 # Plot survival fraction over time
 developmental_survival_plot = plot(16:kesten_timestep:26, developmental_survival_fraction, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
-    title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1))
+    title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1.05))
      
 adult_survival_plot = plot(0:kesten_timestep:18, adulthood_survival_fraction, xlabel="Days", ylabel="Survival Fraction",
-title="Synapse Survival Fraction (Adulthood)", lw=2, legend=false, ylim=(0,1), xticks=0:1:18)
+title="Synapse Survival Fraction (Adulthood)", lw=2, legend=false, ylim=(0,1.05), xticks=0:1:18)
  
 survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1))
 
