@@ -1,25 +1,6 @@
 using DifferentialEquations, Distributions, Plots
 using .syn_maturation_functions
 
-# Parameters
-total_time = 100.0
-total_pool_size = 100
-
-a1 = 0.8
-k1 = 1/10
-b1 = 0.2
-a2 = 0.8
-k2 = 1/5
-b2 = 0.2
-
-creation_func(t) = a1 * exp(-t * k1) + b1
-elimination_func(t) = a2 * exp(-t * k2) + b2
-
-plot(creation_func.(0:1:200), ylim=(0,1), label="creation")
-plot!(elimination_func.(0:1:200), label="elimination")
-
-
-
 function synapse_dynamics_var!(du, u, p, t)
     c_t, m, e_t, i, λ, synapse_sizes = p 
     N_I, N_M, N_P = u
@@ -27,12 +8,12 @@ function synapse_dynamics_var!(du, u, p, t)
 
     # Compute the rate of dematuration using the exponential probability distribution
     # Sum over all mature synapses' probabilities of transitioning to immature state
-    if !isempty(synapse_sizes)
-        dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
-    else
-        dematuration_rate = A
-    end
-    
+    # if !isempty(synapse_sizes)
+    #     dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+    # else
+    #     dematuration_rate = A
+    # end
+    dematuration_rate = i
     # Apply time-dependent e(t) and c(t)
     e_t = elimination_func(t)
     c_t = creation_func(t)
@@ -112,10 +93,30 @@ function kesten_update_var!(sizes, ε, η, σ_ε, σ_η)
     end
 end
 
-c, m, e, i = 0.2,0.2,0.01,0.5
-m, i, λ = 0.2,0.05,2
+# Parameters
+total_time = 100.0
+total_pool_size = 100
+
+a1 = 0.4
+k1 = 1/30
+b1 = 0.2
+a2 = 1.8
+k2 = 1/10
+b2 = 0.2
+
+creation_func(t) = a1 * exp(-t * k1) + b1
+elimination_func(t) = a2 * exp(-t * k2) + b2
+
+plot(creation_func.(0:1:200), ylim=(0,1), label="creation")
+plot!(elimination_func.(0:1:200), label="elimination")
+
+
+c, m, e, i = 0.2,0.2,0.01,0.05
+m, i, λ = 0.2,0.1,2
 params=(m, i, λ)
 
+# a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
+params=(m, i, λ)
 # Run simulation
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_timestep);
 
@@ -124,18 +125,17 @@ immature_population_var = sol[1, :]
 mature_population_var = sol[2, :]
 poold = sol[3,:]
 
-final_I_value = total_pool_size / (1 + m/i + elimination_func(total_time)/creation_func(total_time))
-final_M_value = total_pool_size / (1 + i/m + (elimination_func(total_time)*i)/(creation_func(total_time)*m))
 
-var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
-plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
+final_I_value = (i*total_pool_size*(a1+b1))/(m*(a1+b1)+i*(a1+a2+b1+b2))
+final_M_value = (total_pool_size*(a1+b1))/(a1+b1+(i/m)*(a1+a2+b1+b2))
+
+var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
+plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=1, xlabel="Time",ylabel="Population size")
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
-hline!([immature_population_var[end] + mature_population_var[end]])
+hline!([immature_population_var[end] + mature_population_var[end]], label=false)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
-hline!([(immature_population_var+mature_population_var)[end]],label=false)
-
 
 
 # savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")

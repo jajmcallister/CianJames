@@ -229,40 +229,6 @@ plot(1:length(existing_history), existing_history, xlabel="Time Steps", ylabel="
      title="Synapse Population Over Time", lw=2, legend=false)
 
 
-# Function to compute the survival fraction from state_records
-function compute_survival_fraction(state_records)
-    total_time_steps = size(state_records, 2)
-
-    # Identify the initial population
-    initial_existing_synapses = findall(x -> x != 0, state_records[:, 1])
-
-    # Initialize array to store the survival fraction over time
-    survival_fraction = zeros(total_time_steps)
-
-    # Loop over each time step and compute the fraction of surviving synapses
-    for t in 1:total_time_steps
-        # Find how many of the initial synapses are still in the existing population at time t
-        surviving_synapses = count(x -> state_records[x, t] != 0, initial_existing_synapses)
-        
-        # Compute survival fraction as the ratio of surviving synapses to the initial population size
-        survival_fraction[t] = surviving_synapses / length(initial_existing_synapses)
-    end
-
-    return survival_fraction
-end
-
-state_records[:,10:end]
-# Compute survival fraction
-survival_fraction = compute_survival_fraction(state_records[:,100:end])
-
-# Plot survival fraction over time
-plot(1:length(survival_fraction), survival_fraction, xlabel="Time Steps", ylabel="Survival Fraction",
-    title="Synapse Survival Fraction Over Time", lw=2, legend=false, ylim=(0,1))
-     
-
-
-
-
 
 
 

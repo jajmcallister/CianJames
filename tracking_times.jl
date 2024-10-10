@@ -1,7 +1,7 @@
 using DifferentialEquations, Random, Distributions, Plots
 using .syn_maturation_functions
 
-total_pool_size = 1000
+total_pool_size = 100
 
 function compute_durations(row)
     durations_of_0 = Int[]  # To store lengths of consecutive 0s
@@ -186,6 +186,10 @@ function track_times_constant_rates(total_time, total_pool_size, rates, ε, η, 
 
 end
 
+function safe_sample(list, num_samples; replace=false)
+    return sample(list, min(num_samples, length(list)), replace=false)
+end
+
 
 
 
@@ -254,7 +258,7 @@ for i in 1:20
     push!(mh_trials, mh)
 end
 
-plot!(0:0.01:total_time, mean(ih_trials), ribbon=std(ih_trials))
+plot(0:0.01:total_time, mean(ih_trials), ribbon=std(ih_trials))
 plot!(0:0.01:total_time, mean(mh_trials), ribbon=std(mh_trials))
 plot!(0:0.01:total_time, mean(ih_trials) .+ mean(mh_trials))
 
@@ -272,10 +276,6 @@ hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= 
 #######
 #######
 
-
-
-elimination_func(t) = 0.1 * exp(-t / 10) + 0.2
-creation_func(t) = 0.2 * exp(-t / 30) + 0.2
 
 
 function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
@@ -328,11 +328,13 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         mature_to_immature_indices = []
         A = i
         for (id, size) in enumerate(synapse_sizes)
-            prob = A * exp(-size / lambda) * kesten_timestep
+            prob = i*kesten_time_step #A * exp(-size / lambda) * kesten_timestep
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end
         end
+
+        
     
         # Update states based on calculated probabilities
         mature_to_immature = length(mature_to_immature_indices)
@@ -359,9 +361,6 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         push!(immature_history, immature)
         push!(mature_history, mature)
 
-        function safe_sample(list, num_samples; replace=false)
-            return sample(list, min(num_samples, length(list)), replace=false)
-        end
 
         # 1. Pool to immature
         pool_to_immature_count = abs(trunc(Int, pool_to_immature))
@@ -430,7 +429,7 @@ final_M_value = total_pool_size / (1 + i/m + (elim[end]*i)/(creat[end]*m))
 plot(0:0.01:total_time, ih_var)
 plot!(0:0.01:total_time, mh_var)
 plot!(0:0.01:total_time, ih_var+mh_var)
-hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
+# hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
 plot(0:0.01:99.99, state_records_var[1,:],yticks=([0,1,2],["Pool", "Immature", "Mature"]))
@@ -452,7 +451,7 @@ ones_per_column = sum(state_records_var .== 1, dims=1)
 twos_per_column = sum(state_records_var .== 2, dims=1)
 
 # Plot the result (from the state records)
-plot!(0:0.01:99.99, ones_per_column[:], xlabel="Column", ylabel="Number of 1s", label="1s in each column", lw=2)
+plot(0:0.01:99.99, ones_per_column[:], xlabel="Column", ylabel="Number of 1s", label="1s in each column", lw=2)
 plot!(0:0.01:99.99, twos_per_column[:])
 
 
@@ -461,13 +460,13 @@ plot!(0:0.01:99.99, twos_per_column[:])
 ih_trials_var = []
 mh_trials_var = []
 
-for i in 1:100
+for i in 1:10
     ih_var_tr, mh_var_tr, state_records_var, syn_sizes_var = track_times_variable_rates(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
     push!(ih_trials_var, ih_var_tr)
     push!(mh_trials_var, mh_var_tr)
 end
 
-plot!(0:0.01:total_time, mean(ih_trials_var), ribbon=std(ih_trials_var))
+plot(0:0.01:total_time, mean(ih_trials_var), ribbon=std(ih_trials_var))
 plot!(0:0.01:total_time, mean(mh_trials_var), ribbon=std(mh_trials_var))
 plot!(0:0.01:total_time, mean(ih_trials_var) .+ mean(mh_trials_var), legend=false)
 
