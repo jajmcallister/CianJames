@@ -196,10 +196,6 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
     # Simulation
     for t in 1:steps
         # 1 Transitions from pool to immature
-        # pool_to_immature = rand(Binomial(pool, cr[t] * kesten_timestep))
-        # pool -= pool_to_immature
-        # immature += pool_to_immature
-
         pool_to_immature = 0
         transition_prob1 = cr[t] * kesten_timestep
         for i in 1:pool
@@ -211,9 +207,6 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         immature += pool_to_immature
     
         # 2 Transitions from immature to mature
-        # immature_to_mature = rand(Binomial(immature, m * kesten_timestep))
-        # immature -= immature_to_mature
-        # mature += immature_to_mature
         immature_to_mature = 0
         transition_prob2 = m * kesten_timestep  # Probability for each immature synapse to become mature
 
@@ -235,11 +228,9 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         synapse_sizes = sort(synapse_sizes, rev=true)
     
         # 3 Transitions from mature to immature
-        # Calculate the probability (using exponential) for each mature synapse to become immature
         mature_to_immature_indices = []
-        A = i
         for (id, size) in enumerate(synapse_sizes)
-            prob = i*kesten_time_step #A * exp(-size / lambda) * kesten_timestep
+            prob = i*kesten_time_step
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end
@@ -263,9 +254,6 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         end
     
         # 4 Transitions from immature to pool
-        # immature_to_pool = rand(Binomial(immature, el[t] * kesten_timestep))
-        # immature -= immature_to_pool
-        # pool += immature_to_pool
         immature_to_pool = 0
         transition_prob3 = el[t] * kesten_timestep  # Probability for each immature synapse to transition to the pool
 
@@ -406,23 +394,23 @@ p = [total_pool_size, total_time, kesten_timestep, ε, η, σ_ε, σ_η]
 
 # Define bounds for the parameters
 lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-upper_bounds = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
-opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
-prob = Optimization.OptimizationProblem(opt_function, x0, p, lb=lower_bounds, ub=upper_bounds)
-result = Optimization.solve(prob, LBFGS(); maxiters=10, g_tol=1e-3, f_tol=1e-3)
+# # using LBFGS
+# opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
+# prob = Optimization.OptimizationProblem(opt_function, x0, p, lb=lower_bounds, ub=upper_bounds)
+# result = Optimization.solve(prob, LBFGS(); maxiters=10, g_tol=1e-3, f_tol=1e-3) # picking not very small tolerances for trial run
 
 
-# Using CMAES
-sigma = 0.5  # Initial standard deviation of the search distribution
-population_size = 50  # Optional, population size
-stop_tol = 1e-3  # Stop when the change in fitness is less than this
+# # Using CMAES
+# sigma = 0.5 
+# population_size = 50 
+# stop_tol = 1e-3  # picking not very small tolerance for trial run
 
-# Solve using CMAES optimizer
-prob = Optimization.OptimizationProblem(opt_function, x0, p)
-optimizer = CMAES()
-result = Optimization.solve(prob, optimizer)
+# prob = Optimization.OptimizationProblem(opt_function, x0, p)
+# optimizer = CMAES()
+# result = Optimization.solve(prob, optimizer)
 
-# Output the results
-println("Optimal parameters: ", result.minimizer)
-println("Objective function value: ", result.minimum)
+
+prob = Optimization.OptimizationProblem(find_optimal_parameters, x0, p, lb=lower_bounds, ub=upper_bounds)
+sol = solve(prob, NelderMead())
