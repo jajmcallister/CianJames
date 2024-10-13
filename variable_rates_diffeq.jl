@@ -113,6 +113,7 @@ plot!(elimination_func.(0:1:200), label="elimination")
 
 c, m, e, i = 0.2,0.2,0.01,0.05
 m, i, λ = 0.2,0.1,2
+λ = 2
 params=(m, i, λ)
 
 # a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5

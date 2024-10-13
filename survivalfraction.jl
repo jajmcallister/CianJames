@@ -55,7 +55,11 @@ end
 # end
 
 
-total_pool_size = 1000
+
+a1,k1,a2,k2,m,i = optimal_params
+total_pool_size = 10
+total_time = 300
+# parameters with pool = 100: 0.2123729118369409, 0.09117010118164337, 1.1700516097047382, 0.04654061119446891, 0.11116109898864276, 0.19446676360218018
 elim = elimination_func.(0:kesten_timestep:total_time)
 creat = creation_func.(0:kesten_timestep:total_time)
 rates_var = creat, m, elim, i
@@ -90,7 +94,7 @@ survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, 
 
 # Multiple trials
 
-num_trials = 2
+num_trials = 10
 
 state_recs_var_multiple = []
 
@@ -141,15 +145,16 @@ adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_m
 
 dev_scatter = scatter(16:1:26, development_points_to_match_sim, ylim=(0,1.05), label="Model", xticks=16:1:26)
 scatter!(16:1:26, development_points_to_match_data, label="Data",title="Survival Fraction (Early Development)", xlabel="Postnatal day")
-plot!(16:1:26, development_survival_error, color="red", label="Error")
+# plot!(16:1:26, development_survival_error.^2, color="red", label="Error^2")
 
 adult_scatter = scatter(adult_ids1, [mean(adult_survival_multiple)[id+1] for id in adult_ids2], ylim=(0,1.05), label="Model", xticks=0:1:18)
-scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days")
-plot!(adult_ids3, adulthood_survival_error, color="red", label="Error")
+scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days", legend=:bottomleft)
+# plot!(adult_ids3, adulthood_survival_error.^2, color="red", label="Error^2")
 
 
-plot(dev_scatter, adult_scatter, layout=(2,1))
+pp = plot(dev_scatter, adult_scatter, layout=(2,1))
 
+# savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/parameter_fit.png")
 # Calculate loss/error
 total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
 
@@ -376,13 +381,23 @@ function find_optimal_parameters(x,p)
     development_survival_error = development_points_to_match_sim - development_points_to_match_data
     adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
 
+    # Penalising if creation starts off higher than elimination
     total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
+    if elim[1] < creat[1]
+        total_error *= 10
+    end
+
+    # Penalising if elimination is higher than creation the whole time
+    if all(elim .> creat)
+        total_error *= 10
+    end
+
     return total_error
 end
 
 
 # x = a1,k1,a2,k2,m,i
-total_pool_size = 100
+total_pool_size = 1000
 total_time = 100
 kesten_timestep = 0.01
 ε, η = .985, 0.015
@@ -412,5 +427,7 @@ upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 # result = Optimization.solve(prob, optimizer)
 
 
-prob = Optimization.OptimizationProblem(find_optimal_parameters, x0, p, lb=lower_bounds, ub=upper_bounds)
-sol = solve(prob, NelderMead())
+prob = Optimization.OptimizationProblem(find_optimal_parameters, x0, p)#, lb=lower_bounds, ub=upper_bounds)
+sol = solve(prob,NelderMead())
+
+optimal_params = sol
