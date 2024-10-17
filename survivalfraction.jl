@@ -381,6 +381,11 @@ function find_optimal_parameters(x,p)
     development_survival_error = development_points_to_match_sim - development_points_to_match_data
     adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
 
+
+    # work out the peak value of the combined populations and check if it occurs !at beginning and !end
+
+
+    
     # Penalising if creation starts off higher than elimination
     total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
     if elim[1] < creat[1]
@@ -397,7 +402,7 @@ end
 
 
 # x = a1,k1,a2,k2,m,i
-total_pool_size = 1000
+total_pool_size = 10
 total_time = 100
 kesten_timestep = 0.01
 ε, η = .985, 0.015
