@@ -328,7 +328,7 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         mature_to_immature_indices = []
         A = i
         for (id, size) in enumerate(synapse_sizes)
-            prob = i*kesten_time_step #A * exp(-size / lambda) * kesten_timestep
+            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end

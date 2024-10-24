@@ -56,31 +56,43 @@ end
 
 
 
-a1,k1,a2,k2,m,i = optimal_params
-total_pool_size = 10
-total_time = 300
+a1,k1,b1,a2,k2,b2,m,A,lambda = optimal_params
+
+total_pool_size = 1000
+total_time = 100
+
+creation_func(t) = a1 * exp(-t * k1) + b1
+elimination_func(t) = a2 * exp(-t * k2) + b2
+
 # parameters with pool = 100: 0.2123729118369409, 0.09117010118164337, 1.1700516097047382, 0.04654061119446891, 0.11116109898864276, 0.19446676360218018
 elim = elimination_func.(0:kesten_timestep:total_time)
 creat = creation_func.(0:kesten_timestep:total_time)
-rates_var = creat, m, elim, i
+
+plot(elim)
+plot!(creat)
+
+rates_var = creat, m, elim, i, A, lambda
 ih_var, mh_var, state_records_var, syn_sizes_var = track_times_variable_rates(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
 
 
-plot(0:0.01:total_time, ih_var)
-plot!(0:0.01:total_time, mh_var)
-plot!(0:0.01:total_time, ih_var+mh_var)
+plot(0:kesten_timestep:total_time, ih_var)
+plot!(0:kesten_timestep:total_time, mh_var)
+plot!(0:kesten_timestep:total_time, ih_var+mh_var)
 vline!([16,26], label="Developmental period")
 vline!([70], label = "Adulthood")
 
-
-
 developmental_period_16 = round(Int, 16/kesten_timestep)
 developmental_period_26 = round(Int, 26/kesten_timestep)
+
 adult_period = round(Int, 70/kesten_timestep)
 
 # Compute survival fraction
 developmental_survival_fraction = compute_survival_fraction(state_records_var[:,developmental_period_16:developmental_period_26])
 adulthood_survival_fraction = compute_survival_fraction(state_records_var[:,adult_period:round(Int, 18/kesten_timestep)+adult_period])
+
+plot(developmental_survival_fraction)
+plot(adulthood_survival_fraction)
+collect(16:kesten_timestep:26)
 
 # Plot survival fraction over time
 developmental_survival_plot = plot(16:kesten_timestep:26, developmental_survival_fraction, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
@@ -132,6 +144,9 @@ adult_ids1 = collect(0:1:18)
 adult_ids2 = collect(0:1:18)
 adult_ids2 = [round(Int, id/kesten_timestep) for id in adult_ids2]
 adult_ids3 = [0,1,2,3,4,5,17,18]
+
+
+
 
 development_points_to_match_sim = [mean(develop_survival_multiple)[id+1] for id in dev_ids]
 development_points_to_match_data = [1.0, 0.661896208, 0.52522361,0.468246877, 0.421466905, 0.397137735, 0.376028593, 0.364221812, 0.344543843, 0.348389962, 0.340339859]
@@ -187,7 +202,7 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
     I_pop = []
     M_pop = []
     pool_pop = [i for i in 1:total_pool_size]
-    cr, m, el, i = rates
+    cr, m, el, A, lambda  = rates
 
     push!(pool_history, pool)
     push!(immature_history, immature)
@@ -235,7 +250,7 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         # 3 Transitions from mature to immature
         mature_to_immature_indices = []
         for (id, size) in enumerate(synapse_sizes)
-            prob = i*kesten_time_step
+            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end
@@ -328,15 +343,16 @@ end
 function find_optimal_parameters(x,p)
     total_pool_size = Int(p[1])
     total_time = p[2] 
-    kesten_timestep = p[3]
+    #kesten_timestep = p[3]
     ε = p[4]
     η = p[5]
     σ_ε = p[6]
     σ_η = p[7]
 
     num_trials = 3
-    b1,b2 = 0.2,0.2
-    a1,k1,a2,k2,m,i = x
+    # b1,b2 = 0.2,0.2
+    
+    a1,k1,b1,a2,k2,b2,m,A,lambda= x
 
     creation_func(t) = a1 * exp(-t * k1) + b1
     elimination_func(t) = a2 * exp(-t * k2) + b2
@@ -345,7 +361,7 @@ function find_optimal_parameters(x,p)
     creat = creation_func.(0:kesten_timestep:total_time)
 
 
-    rates_var = creat, m, elim, i
+    rates_var = creat, m, elim, A, lambda
 
 
     state_recs_var_multiple = []
@@ -357,6 +373,13 @@ function find_optimal_parameters(x,p)
 
     develop_survival_multiple = []
     adult_survival_multiple = []
+
+    
+
+    developmental_period_16 = round(Int, 16/kesten_timestep)
+    developmental_period_26 = round(Int, 26/kesten_timestep)
+    adult_period = round(Int, 70/kesten_timestep)
+
 
     for state_recs in state_recs_var_multiple
         developmental_survival_fraction1 = compute_survival_fraction(state_recs[:,developmental_period_16:developmental_period_26])
@@ -389,12 +412,12 @@ function find_optimal_parameters(x,p)
     # Penalising if creation starts off higher than elimination
     total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
     if elim[1] < creat[1]
-        total_error *= 10
+        total_error *= 2
     end
 
     # Penalising if elimination is higher than creation the whole time
     if all(elim .> creat)
-        total_error *= 10
+        total_error *= 2
     end
 
     return total_error
@@ -402,19 +425,19 @@ end
 
 
 # x = a1,k1,a2,k2,m,i
-total_pool_size = 10
+total_pool_size = 100
 total_time = 100
 kesten_timestep = 0.01
 ε, η = .985, 0.015
 σ_ε, σ_η = .05, .05
 
-# Initial starting point
-x0 = [0.4,1/30,0.8,1/10,0.2,0.1]
-p = [total_pool_size, total_time, kesten_timestep, ε, η, σ_ε, σ_η]
+# Initial starting point x0 = a1,k1,b1,a2,k2,b2,m,A,lambda
+x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.1,0.1,1.0]
+p = [total_pool_size, total_time, 1, ε, η, σ_ε, σ_η]
 
 # Define bounds for the parameters
-lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
 # # using LBFGS
 # opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
@@ -432,7 +455,8 @@ upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 # result = Optimization.solve(prob, optimizer)
 
 
-prob = Optimization.OptimizationProblem(find_optimal_parameters, x0, p)#, lb=lower_bounds, ub=upper_bounds)
-sol = solve(prob,NelderMead())
+prob = Optimization.OptimizationProblem(find_optimal_parameters, x0, p) #, lb=lower_bounds, ub=upper_bounds)
+sol = solve(prob,NelderMead(),maxiters=1000)
 
 optimal_params = sol
+

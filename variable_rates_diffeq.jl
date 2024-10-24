@@ -8,12 +8,12 @@ function synapse_dynamics_var!(du, u, p, t)
 
     # Compute the rate of dematuration using the exponential probability distribution
     # Sum over all mature synapses' probabilities of transitioning to immature state
-    # if !isempty(synapse_sizes)
-    #     dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
-    # else
-    #     dematuration_rate = A
-    # end
-    dematuration_rate = i
+    if !isempty(synapse_sizes)
+        dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+    else
+        dematuration_rate = A
+    end
+    # dematuration_rate = i
     # Apply time-dependent e(t) and c(t)
     e_t = elimination_func(t)
     c_t = creation_func(t)
@@ -97,7 +97,7 @@ end
 total_time = 100.0
 total_pool_size = 100
 
-a1 = 0.4
+a1 = 0.5
 k1 = 1/30
 b1 = 0.2
 a2 = 1.8
@@ -135,7 +135,7 @@ plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="b
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
-hline!([immature_population_var[end] + mature_population_var[end]], label=false)
+hline!([immature_population_var[end] + mature_population_var[end]], label=false,xlim=(30,70),ylim=(450,510))
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
