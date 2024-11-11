@@ -116,8 +116,8 @@ m, i, λ = 0.2,0.1,2
 λ = 2
 params=(m, i, λ)
 
-# a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
-params=(m, i, λ)
+a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
+params=(m, i, lambda)
 # Run simulation
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_timestep);
 
@@ -139,7 +139,7 @@ hline!([immature_population_var[end] + mature_population_var[end]], label=false,
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
-# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/variablerates1.png")
+savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populationsplot.png")
 
 
 

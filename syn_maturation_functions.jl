@@ -63,7 +63,10 @@ function kesten_update!(sizes, ε, η, σ_ε, σ_η)
         ε_i = rand(Normal(ε, σ_ε))
         η_i = rand(Normal(η, σ_η))
         new_size = ε_i * sizes[i] + η_i
-        sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
+        if sizes[i] < 0
+            sizes[i] = 0.0
+        end
+        # sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
     end
 end
 

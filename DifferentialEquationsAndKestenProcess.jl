@@ -3,7 +3,7 @@ using .syn_maturation_functions
 
 # Parameters
 total_time = 100.0
-total_pool_size = 1000
+total_pool_size = 100
 # c, m, e, i = 0.6820606226870286, 0.3896891612648679, 1.1943516162074415, 1.2748396318634099
 c, m, e, i = 0.2,0.2,0.1,0.05
 ε, η = .985, 0.015
