@@ -135,7 +135,7 @@ plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="b
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
-hline!([immature_population_var[end] + mature_population_var[end]], label=false,xlim=(30,70),ylim=(450,510))
+hline!([immature_population_var[end] + mature_population_var[end]], label=false)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 

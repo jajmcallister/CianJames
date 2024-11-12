@@ -58,7 +58,7 @@ end
 
 a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η = sol
 
-total_pool_size = 100
+total_pool_size = 10
 total_time = 100
 kesten_timestep = 0.1
 creation_func(t) = a1 * exp(-t * k1) + b1
@@ -107,7 +107,7 @@ survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, 
 
 # Multiple trials
 
-num_trials = 10
+num_trials = 100
 
 state_recs_var_multiple = []
 
@@ -189,6 +189,13 @@ ppp = plot(developmental_survival_plot_trials, adult_survival_plot_trials, layou
 
 # Calculate loss/error
 total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
+
+
+f(xx) = A*exp(xx*lambda)
+
+plot(f.(0:0.1:2))
+
+
 
 
 ###########
@@ -366,7 +373,7 @@ function find_optimal_parameters(x,p)
     # σ_ε = p[6]
     # σ_η = p[7]
 
-    num_trials = 10
+    num_trials = 3
     
     a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η = x
 
@@ -443,7 +450,7 @@ function find_optimal_parameters(x,p)
 end
 
 
-x = a1,k1,a2,k2,m,i
+# x = a1,k1,a2,k2,m,i
 total_pool_size = 10
 total_time = 100
 kesten_timestep = 0.01
@@ -452,11 +459,13 @@ kesten_timestep = 0.01
 
 # Initial starting point x0
 x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.1,0.1,1.0,ε, η, σ_ε, σ_η]
+# x0 = [0.8,1/10,0.6,0.3,1/5,0.7,0.2,0.2,1.0,ε, η, σ_ε, σ_η]
+x0 = [0.5,1/20,0.3,0.6,1/10,0.3,0.2,0.2,2.0,ε, η, σ_ε, σ_η]
 p = [total_pool_size, total_time, 1, ε, η, σ_ε, σ_η]
 
 # Define bounds for the parameters
 lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-upper_bounds = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.2, 0.2]
+upper_bounds = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 0.2, 0.2]
 
 # Set up the optimization function with automatic differentiation
 opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
@@ -471,5 +480,5 @@ prob = OptimizationProblem(
 )
 
 # Run the optimization with NelderMead
-sol = solve(prob, NelderMead(), maxiters=2, show_trace=true)
+sol = solve(prob, NelderMead(), maxiters=10000, show_trace=true)
 
