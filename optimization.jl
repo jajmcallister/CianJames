@@ -256,16 +256,13 @@ end
 
 function find_optimal_parameters(x,p)
     total_pool_size = Int(p[1])
-    total_time = p[2] 
-    #kesten_timestep = p[3]
-    # ε = p[4]
-    # η = p[5]
-    # σ_ε = p[6]
-    # σ_η = p[7]
+    total_time = Int(p[2])
 
-    num_trials = 3
+    num_trials = 5
     
     a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η = x
+    kesten_timestep = 0.01
+
 
     creation_func(t) = a1 * exp(-t * k1) + b1
     elimination_func(t) = a2 * exp(-t * k2) + b2
@@ -284,40 +281,40 @@ function find_optimal_parameters(x,p)
         push!(state_recs_var_multiple, state_record_var)
     end
 
-    develop_survival_multiple = []
-    adult_survival_multiple = []
-
-    
-
-    developmental_period_16 = round(Int, 16/kesten_timestep)
-    developmental_period_26 = round(Int, 26/kesten_timestep)
-    adult_period = round(Int, 70/kesten_timestep)
-
+    develop_survival_multiplee = []
+    adult_survival_multiplee = []
 
     for state_recs in state_recs_var_multiple
+        developmental_period_16 = round(Int, (16/100)*size(state_recs,2))
+        developmental_period_26 = round(Int, (26/100)*size(state_recs,2))
+        
+        adult_period = round(Int, (70/100)*size(state_recs,2))
+        adult_period2 = round(Int, (88/100)*size(state_recs,2))
+
         developmental_survival_fraction1 = compute_survival_fraction(state_recs[:,developmental_period_16:developmental_period_26])
-        adulthood_survival_fraction1 = compute_survival_fraction(state_recs[:,adult_period:round(Int, 18/kesten_timestep)+adult_period])
-        push!(develop_survival_multiple, developmental_survival_fraction1)
-        push!(adult_survival_multiple, adulthood_survival_fraction1)
+        adulthood_survival_fraction1 = compute_survival_fraction(state_recs[:,adult_period:adult_period2])
+        push!(develop_survival_multiplee, developmental_survival_fraction1)
+        push!(adult_survival_multiplee, adulthood_survival_fraction1)
     end
 
     dev_ids = collect(0:1:10)
     dev_ids = [round(Int, id/kesten_timestep) for id in dev_ids]
 
-    # adult_ids = [0,1,2,3,4,5,17,18]
     adult_ids = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
     adult_ids = [round(Int, id/kesten_timestep) for id in adult_ids]
+    adult_ids3 = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
 
-
-    development_points_to_match_sim = [mean(develop_survival_multiple)[id+1] for id in dev_ids]
+    development_points_to_match_sim = [mean(develop_survival_multiplee)[id+1] for id in dev_ids]
     development_points_to_match_data = [1.0, 0.661896208, 0.52522361,0.468246877, 0.421466905, 0.397137735, 0.376028593, 0.364221812, 0.344543843, 0.348389962, 0.340339859]
     
-    adulthood_points_to_match_sim = [mean(adult_survival_multiple)[id+1] for id in adult_ids]
-    # adulthood_points_to_match_data = [1.0, 0.870199702, 0.82058372, 0.788018458, 0.775729644, 0.755248343, 0.688556071, 0.681643617]
+    adulthood_points_to_match_sim = [mean(adult_survival_multiplee)[id+1] for id in adult_ids]
     adulthood_points_to_match_data = [1.0, 0.870199702, 0.82058372, 0.788018458, 0.775729644, 0.755248343, 0.7490909229625357, 0.7400000138716264, 0.7290909507057883, 0.7163636641068893, 0.7054545315829192, 0.694545468417081, 0.688556071, 0.681643617]
 
     development_survival_error = development_points_to_match_sim - development_points_to_match_data
     adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
+
+
+
 
 
     # work out the peak value of the combined populations and check if it occurs !at beginning and !end
@@ -326,6 +323,7 @@ function find_optimal_parameters(x,p)
     
     # Penalising if creation starts off higher than elimination
     total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
+
 
     if elim[1] < creat[1]
         total_error *= 2
@@ -348,10 +346,10 @@ kesten_timestep = 0.01
 σ_ε, σ_η = .05, .05
 
 # Initial starting point x0
-x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.1,0.1,1.0, ε, η, σ_ε, σ_η]
-# x0 = [0.8,1/10,0.6,0.3,1/5,0.7,0.2,0.2,1.0,ε, η, σ_ε, σ_η]
-x0 = [0.5,1/20,0.3,0.6,1/10,0.3,0.2,0.2,2.0,ε, η, σ_ε, σ_η]
-p = [total_pool_size, total_time, 1, ε, η, σ_ε, σ_η]
+# x = a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η
+x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.01,0.1,1.0, ε, η, σ_ε, σ_η]
+
+p = [total_pool_size, total_time]
 
 # Define bounds for the parameters
 lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -370,5 +368,7 @@ prob = OptimizationProblem(
 )
 
 # Run the optimization with NelderMead
-sol = solve(prob, NelderMead(), maxiters=10, show_trace=true)
+sol = solve(prob, NelderMead(), maxiters=2,show_trace=true)
+
+
 

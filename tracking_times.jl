@@ -190,7 +190,19 @@ function safe_sample(list, num_samples; replace=false)
     return sample(list, min(num_samples, length(list)), replace=false)
 end
 
+function kesten_update(sizes, ε, η, σ_ε, σ_η)
+    for i in 1:length(sizes)
+        ε_i = rand(Normal(ε, σ_ε))
+        η_i = rand(Normal(η, σ_η))
+        new_size = ε_i * sizes[i] + η_i
+        if sizes[i] < 0
+            sizes[i] = 0.0
+        end
+        sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
+    end
 
+    return sizes
+end
 
 
 # Define transition rates
@@ -386,7 +398,7 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
         append!(pool_pop, immature_to_pool_indxs)
 
-        syn_maturation_functions.kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η)
+        synapse_sizes = kesten_update(synapse_sizes, ε, η, σ_ε, σ_η)
     
 
         push!(synapse_size_history, synapse_sizes)

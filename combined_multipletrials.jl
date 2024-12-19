@@ -16,12 +16,12 @@ num_trials = 10
 
 # Run differential equations
 total_synapse_sizes_diffeq = []
-sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step);
+sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
 time_array_diffeq = sol.t
 immature_population_diffeq = sol[1, :]
 mature_population_diffeq = sol[2, :]
 for i in 1:num_trials
-    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step);
+    sol, synapse_sizes_diffeq, synapses_diffeq = syn_maturation_functions.run_simulation_diffeq(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_timestep);
     push!(total_synapse_sizes_diffeq, synapse_sizes_diffeq)
 end
 
@@ -37,7 +37,7 @@ for i in 1:num_trials
     synapse_sizes = Float64[]  # Array to hold sizes of mature synapses
     num_synapses = 0
 
-    time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η, kesten_time_step);
+    time_array_walks, immature_population_walks, mature_population_walks, synapse_sizes_walks = syn_maturation_functions.run_simulation_randwalks(total_time, total_pool_size, synapse_sizes, rates,ε, η, σ_ε, σ_η, kesten_timestep);
     push!(immature_total, immature_population_walks)
     push!(mature_total, mature_population_walks)
     push!(time_walks, time_array_walks)

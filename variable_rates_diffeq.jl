@@ -136,13 +136,13 @@ poold = sol[3,:]
 final_I_value = (i*total_pool_size*(a1+b1))/(m*(a1+b1)+i*(a1+a2+b1+b2))
 final_M_value = (total_pool_size*(a1+b1))/(a1+b1+(i/m)*(a1+a2+b1+b2))
 
-var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
+var_plot = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=1, xlabel="Time",ylabel="Population size")
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
 
 hline!([immature_population_var[end] + mature_population_var[end]], label=false)
-hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
+# hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
 # savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populationsplot.png")
@@ -151,7 +151,7 @@ hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= 
 
 
 # Work out average i value based on average distribution of synapse sizes
-avg_dematuration_rate = i * sum(exp(- size / λ) for size in synapse_sizes_var) / length(synapse_sizes_var)
+avg_dematuration_rate = i * sum(exp(- size / lambda) for size in synapse_sizes_var) / length(synapse_sizes_var)
 
 
 

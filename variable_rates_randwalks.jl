@@ -105,7 +105,7 @@ end
 
 
 
-
+ε, η, σ_ε, σ_η
 
 
 
@@ -115,7 +115,7 @@ time_walks = collect(0:0.01:total_time)
 
 immature_history, mature_history, syn_sizes_rand_var = rand_walks_variable_rates(total_pool_size, total_time, rates_var, kesten_timestep)
 
-var_plot_diffeq = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
+var_plot_diffeq = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=3, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, label="Mature+Immature")
 
@@ -124,7 +124,7 @@ var_plot_randwalks = plot!(time_walks, immature_history, lw=1, label="Immature p
 plot!(time_walks, mature_history, lw=1, label="Mature population", legend=:right)
 plot!(time_walks, immature_history+mature_history)
 
-
+syn_sizes_rand_var
 
 
 #### Trials
