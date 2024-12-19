@@ -104,6 +104,11 @@ a2 = 1.8
 k2 = 1/10
 b2 = 0.2
 
+ε, η = .985, 0.015
+σ_ε, σ_η = .05, .05
+
+kesten_timestep = 0.01
+
 creation_func(t) = a1 * exp(-t * k1) + b1
 elimination_func(t) = a2 * exp(-t * k2) + b2
 
@@ -114,6 +119,7 @@ plot!(elimination_func.(0:1:200), label="elimination")
 c, m, e, i = 0.2,0.2,0.01,0.05
 m, i, λ = 0.2,0.1,2
 λ = 2
+lambda = 2
 params=(m, i, λ)
 
 a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
@@ -139,7 +145,7 @@ hline!([immature_population_var[end] + mature_population_var[end]], label=false)
 hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
-savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populationsplot.png")
+# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populationsplot.png")
 
 
 

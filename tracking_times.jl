@@ -231,7 +231,7 @@ h2 = histogram(d2 .* kesten_timestep,label=false, bins=bins,title="Mature", xlab
 
 duration_hist = plot(h0,h1,h2, layout=(3,1))
 
-savefig(duration_hist, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration_hist.png")
+# savefig(duration_hist, "C://Users/B00955735/OneDrive - Ulster University/Desktop/duration_hist.png")
 
 
 
@@ -328,7 +328,7 @@ function track_times_variable_rates(total_time, total_pool_size, rates, ε, η, 
         mature_to_immature_indices = []
         A = i
         for (id, size) in enumerate(synapse_sizes)
-            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
+            prob = A * exp(- size / lambda) * kesten_timestep #i*kesten_time_step
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end
