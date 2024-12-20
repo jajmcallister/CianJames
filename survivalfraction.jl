@@ -20,45 +20,10 @@ function compute_survival_fraction(state_records)
     return survival_fraction
 end
 
-# function compute_survival_fraction(state_records)
-#     total_time_steps = size(state_records, 2)
 
-#     # Identify the initial population
-#     initial_existing_synapses = findall(x -> x != 0, state_records[:, 1])
+a1,k1,b1,a2,k2,b2,m,A,lambda = sol #,ε,η,σ_ε, σ_η = sol
 
-#     # Initialize array to store the survival fraction over time
-#     survival_fraction = zeros(total_time_steps)
-
-#     # Create an array to track if a synapse has ever left the population
-#     has_left_population = falses(length(initial_existing_synapses))
-
-#     # Loop over each time step and compute the fraction of surviving synapses
-#     for t in 1:total_time_steps
-#         surviving_synapses = 0
-
-#         # Check each synapse in the initial population
-#         for (index, synapse) in enumerate(initial_existing_synapses)
-#             # If the synapse hasn't left and is still present, count it as surviving
-#             if !has_left_population[index] && state_records[synapse, t] != 0
-#                 surviving_synapses += 1
-#             elseif state_records[synapse, t] == 0
-#                 # Mark the synapse as having left the population permanently
-#                 has_left_population[index] = true
-#             end
-#         end
-        
-#         # Compute survival fraction as the ratio of surviving synapses to the initial population size
-#         survival_fraction[t] = surviving_synapses / length(initial_existing_synapses)
-#     end
-
-#     return survival_fraction
-# end
-
-
-
-a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η = sol
-
-total_pool_size = 100
+total_pool_size = 1000
 total_time = 100
 kesten_timestep = 0.01
 creation_func(t) = a1 * exp(-t * k1) + b1
@@ -71,7 +36,7 @@ creat = creation_func.(0:kesten_timestep:total_time)
 plot(elim)
 plot!(creat)
 
-m=0.01
+# m=0.01
 using Distributions
 rates_var = creat, m, elim, i, A, lambda;
 ih_var, mh_var, state_records_var, syn_sizes_var = track_times_variable_rates(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -84,8 +49,8 @@ vline!([16,26], label="Developmental period")
 vline!([70], label = "Adulthood")
 
 
-developmental_period_16 = round(Int, (16/100)*size(state_records_var,2))
-developmental_period_26 = round(Int, (26/100)*size(state_records_var,2))
+developmental_period_16 = round(Int, (6/100)*size(state_records_var,2))
+developmental_period_26 = round(Int, (16/100)*size(state_records_var,2))
 
 adult_period = round(Int, (70/100)*size(state_records_var,2))
 adult_period2 = round(Int, (88/100)*size(state_records_var,2))
@@ -117,7 +82,7 @@ survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, 
 
 # Multiple trials
 
-num_trials = 5
+num_trials = 2
 
 state_recs_var_multiple = []
 ihs = []
@@ -132,11 +97,10 @@ for i in 1:num_trials
     push!(mhs, mh_var)
 end
 
-
+syn_sizes[1]
 
 plot(0:kesten_timestep:100, (mean(ihs).+mean(mhs)))
-vline!([argmax((mean(ihs).+mean(mhs)))])
-length((mean(ihs).+mean(mhs)))
+vline!([100*argmax((mean(ihs).+mean(mhs)))/length((mean(ihs).+mean(mhs)))])
 
 develop_survival_multiple = []
 adult_survival_multiple = []

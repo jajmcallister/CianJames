@@ -231,7 +231,7 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
         append!(pool_pop, immature_to_pool_indxs)
 
-        syn_maturation_functions.kesten_update!(synapse_sizes, ε, η, σ_ε, σ_η)
+        synapse_sizes = kesten_update_new(synapse_sizes, ε, η, σ_ε, σ_η)
     
 
         push!(synapse_size_history, synapse_sizes)
@@ -260,7 +260,7 @@ function find_optimal_parameters(x,p)
 
     num_trials = 5
     
-    a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η = x
+    a1,k1,b1,a2,k2,b2,m,A,lambda = x #,ε,η,σ_ε, σ_η = x
     kesten_timestep = 0.01
 
 
@@ -346,14 +346,14 @@ kesten_timestep = 0.01
 σ_ε, σ_η = .05, .05
 
 # Initial starting point x0
-# x = a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η
-x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.01,0.1,1.0, ε, η, σ_ε, σ_η]
+# x = [a1,k1,b1,a2,k2,b2,m,A,lambda] ,ε,η,σ_ε, σ_η
+x0 = [0.4,1/30,0.2,0.8,1/10,0.2,0.01,0.1,1.0] #, ε, η, σ_ε, σ_η]
 
 p = [total_pool_size, total_time]
 
 # Define bounds for the parameters
-lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-upper_bounds = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 0.2, 0.2]
+lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] #, 0.0, 0.0, 0.0, 0.0]
+upper_bounds = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0] #, 1.0, 10.0, 0.2, 0.2]
 
 # Set up the optimization function with automatic differentiation
 opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
@@ -368,7 +368,4 @@ prob = OptimizationProblem(
 )
 
 # Run the optimization with NelderMead
-sol = solve(prob, NelderMead(), maxiters=2,show_trace=true)
-
-
-
+sol = solve(prob, NelderMead(), maxiters=100, show_trace=true)

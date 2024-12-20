@@ -190,7 +190,8 @@ function safe_sample(list, num_samples; replace=false)
     return sample(list, min(num_samples, length(list)), replace=false)
 end
 
-function kesten_update(sizes, ε, η, σ_ε, σ_η)
+function kesten_update_new(sizes, ε, η, σ_ε, σ_η)
+    sizes=deepcopy(sizes)
     for i in 1:length(sizes)
         ε_i = rand(Normal(ε, σ_ε))
         η_i = rand(Normal(η, σ_η))
@@ -198,7 +199,10 @@ function kesten_update(sizes, ε, η, σ_ε, σ_η)
         if sizes[i] < 0
             sizes[i] = 0.0
         end
-        sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
+        # sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
+        if sizes[i] < 0.0
+            sizes[i]=0.0
+        end
     end
 
     return sizes

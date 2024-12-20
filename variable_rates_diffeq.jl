@@ -24,12 +24,12 @@ function synapse_dynamics_var!(du, u, p, t)
 end
 
 # DiffEq Simulation function with Kesten process
-function run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_time_step)
+function run_simulation_diffeq_var(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_time_step)
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
     synapse_sizes_history = []
-    m, i, λ = params
+    m, i, λ = paramss
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
     tspan = (0.0, total_time);
@@ -118,14 +118,14 @@ plot!(elimination_func.(0:1:200), label="elimination")
 
 c, m, e, i = 0.2,0.2,0.01,0.05
 m, i, λ = 0.2,0.1,2
-λ = 2
+λ = lambda
 lambda = 2
-params=(m, i, λ)
+paramss = (m, i, λ)
 
 a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
 params=(m, i, lambda)
 # Run simulation
-sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, params, ε, η, σ_ε, σ_η, kesten_timestep);
+sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
 
 time_array_var = sol.t
 immature_population_var = sol[1, :]
@@ -136,7 +136,7 @@ poold = sol[3,:]
 final_I_value = (i*total_pool_size*(a1+b1))/(m*(a1+b1)+i*(a1+a2+b1+b2))
 final_M_value = (total_pool_size*(a1+b1))/(a1+b1+(i/m)*(a1+a2+b1+b2))
 
-var_plot = plot!(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
+var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
 plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=1, xlabel="Time",ylabel="Population size")
 
 plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
