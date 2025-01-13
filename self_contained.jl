@@ -1,25 +1,4 @@
-using Pkg
-
-
-Pkg.add("Random")
-Pkg.add("StatsBase")
-Pkg.add("DifferentialEquations")
-Pkg.add("Distributions")
-Pkg.add("Statistics")
-Pkg.add("Optimization")
-Pkg.add("OptimizationBBO")
-Pkg.add("OptimizationOptimJL")
-Pkg.add("OptimizationEvolutionary")
-Pkg.add("Tables")
-Pkg.add("DataFrames")
-Pkg.add("CSV")
-
-using Random, StatsBase, DifferentialEquations, Distributions, Statistics
-using Optimization, OptimizationBBO, OptimizationOptimJL, OptimizationEvolutionary
-using Tables, DataFrames, CSV
-
-
-function new_compute_survival_fraction(state_records)
+function new_compute_survival_fraction007(state_records)
     total_time_steps = size(state_records, 2)
 
     # Identify the initial population
@@ -51,11 +30,11 @@ function new_compute_survival_fraction(state_records)
 end
 
 
-function safe_sample(list, num_samples; replace=false)
+function safe_sample007(list, num_samples; replace=false)
     return sample(list, min(num_samples, length(list)), replace=false)
 end
 
-function kesten_update_new(sizes, ε, η, σ_ε, σ_η)
+function kesten_update_new007(sizes, ε, η, σ_ε, σ_η)
     sizes=deepcopy(sizes)
     for i in 1:length(sizes)
         ε_i = rand(Normal(ε, σ_ε))
@@ -73,7 +52,7 @@ function kesten_update_new(sizes, ε, η, σ_ε, σ_η)
     return sizes
 end
 
-function time_average(data, window) where T
+function time_average007(data, window)
     # Check if the window size is valid
     if window < 1 || window > length(data)
         throw(ArgumentError("Window size must be between 1 and the length of the data."))
@@ -85,7 +64,7 @@ function time_average(data, window) where T
 end
 
 
-function track_times_variable_rates_optimise(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
+function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, η, σ_ε, σ_η, kesten_time_step)
 
     pool = total_pool_size
     steps = trunc(Int, total_time / kesten_time_step)
@@ -215,7 +194,7 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
         filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
         append!(pool_pop, immature_to_pool_indxs)
 
-        synapse_sizes = kesten_update_new(synapse_sizes, ε, η, σ_ε, σ_η)
+        synapse_sizes = kesten_update_new007(synapse_sizes, ε, η, σ_ε, σ_η)
     
 
         push!(synapse_size_history, synapse_sizes)
@@ -238,153 +217,126 @@ function track_times_variable_rates_optimise(total_time, total_pool_size, rates,
 end
 
 
-function find_optimal_parameters(x,p)
-    total_pool_size = Int(p[1])
-    total_time = Int(p[2])
-
-    num_trials = 5
-    
-    a1,k1,b1,a2,k2,b2,m,A,lambda = x #,ε,η,σ_ε, σ_η = x
-    kesten_timestep = 0.01
-
-
-    creation_func(t) = a1 * exp(-t * k1) + b1
-    elimination_func(t) = a2 * exp(-t * k2) + b2
-
-    elim = elimination_func.(0:kesten_timestep:total_time)
-    creat = creation_func.(0:kesten_timestep:total_time)
-
-
-    rates_var = creat, m, elim, A, lambda
-
-
-    state_recs_var_multiple = []
-    ihs = []
-    mhs = []
-
-    for i in 1:num_trials
-        ih_var, mh_var, state_record_var, syn_sizes_var = track_times_variable_rates_optimise(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
-        push!(state_recs_var_multiple, state_record_var)
-        push!(ihs, ih_var)
-        push!(mhs, mh_var)
-    end
-
-    develop_survival_multiplee = []
-    adult_survival_multiplee = []
-
-    for state_recs in state_recs_var_multiple
-        developmental_period_16 = round(Int, (16/100)*size(state_recs,2))
-        developmental_period_26 = round(Int, (26/100)*size(state_recs,2))
-        
-        adult_period = round(Int, (70/100)*size(state_recs,2))
-        adult_period2 = round(Int, (88/100)*size(state_recs,2))
-
-        developmental_survival_fraction1 = new_compute_survival_fraction(state_recs[:,developmental_period_16:developmental_period_26])
-        adulthood_survival_fraction1 = new_compute_survival_fraction(state_recs[:,adult_period:adult_period2])
-        push!(develop_survival_multiplee, developmental_survival_fraction1)
-        push!(adult_survival_multiplee, adulthood_survival_fraction1)
-    end
-
-    dev_ids = collect(0:1:10)
-    dev_ids = [round(Int, id/kesten_timestep) for id in dev_ids]
-
-    adult_ids = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
-    adult_ids = [round(Int, id/kesten_timestep) for id in adult_ids]
-    adult_ids3 = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
-
-    development_points_to_match_sim = [mean(develop_survival_multiplee)[id+1] for id in dev_ids]
-    development_points_to_match_data = [1.0, 0.661896208, 0.52522361,0.468246877, 0.421466905, 0.397137735, 0.376028593, 0.364221812, 0.344543843, 0.348389962, 0.340339859]
-    
-    adulthood_points_to_match_sim = [mean(adult_survival_multiplee)[id+1] for id in adult_ids]
-    adulthood_points_to_match_data = [1.0, 0.870199702, 0.82058372, 0.788018458, 0.775729644, 0.755248343, 0.7490909229625357, 0.7400000138716264, 0.7290909507057883, 0.7163636641068893, 0.7054545315829192, 0.694545468417081, 0.688556071, 0.681643617]
-
-    development_survival_error = development_points_to_match_sim - development_points_to_match_data
-    adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
-
-    total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
-
-    # work out the peak value of the combined populations and check if it occurs !at beginning and !end
-    smoothed_avg = time_average(mean(ihs)+mean(mhs),100)
-    max_val = maximum(smoothed_avg)
-    end_val = smoothed_avg[end]
-    id_max = argmax(smoothed_avg)
-    
-
-    if id_max < 2500 || id_max > 8000
-        total_error *= 2
-    end
-    
-    if max_val - end_val < 0.1*max_val
-        total_error *= 2
-    end
-    
-
-    
-    # # Penalising if creation starts off higher than elimination
-
-    # if elim[1] < creat[1]
-    #     total_error *= 2
-    # end
-
-    # # Penalising if elimination is higher than creation the whole time
-    # if all(elim .> creat)
-    #     total_error *= 2
-    # end
-
-    return total_error
-end
-
-
-# x = a1,k1,b1,a2,k2,b2,m,A,lambda,ε,η,σ_ε, σ_η
-total_pool_size = 10
+total_pool_size = 100
 total_time = 100
 kesten_timestep = 0.01
 
 
-a1 = 0.9
-k1 = 1/30
-b1 = 0.2
-a2 = 1.8
-k2 = 1/10
-b2 = 0.2
+# a1 = 0.9
+# k1 = 1/30
+# b1 = 0.2
+# a2 = 1.8
+# k2 = 1/10
+# b2 = 0.2
 
-ε, η = .985, 0.015
-σ_ε, σ_η = .05, .05
+# a1,k1,b1,a2,k2,b2,m,A,lambda = 0.9, 0.03333333333333333, 0.2, 1.8, 0.17500000000000002, 0.2, 0.05, 0.05, 0.5
 
-A = 0.05
-lambda = 0.5
+# ε, η = .985, 0.015
+# σ_ε, σ_η = .05, .05
 
-m=0.05
+# A = 0.05
+# lambda = 0.5
 
-
-
-# Initial starting point x0
-# x = [a1,k1,b1,a2,k2,b2,m,A,lambda] ,ε,η,σ_ε, σ_η
-x0 = [a1,k1,b1,a2,k2,b2,m,A,lambda] #, ε, η, σ_ε, σ_η]
-
-p = [total_pool_size, total_time]
-
-# Define bounds for the parameters
-lower_bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] #, 0.0, 0.0, 0.0, 0.0]
-upper_bounds = [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0] #, 1.0, 10.0, 0.2, 0.2]
-
-# Set up the optimization function with automatic differentiation
-opt_function = OptimizationFunction(find_optimal_parameters, Optimization.AutoForwardDiff())
-
-# Define the optimization problem with bounds
-prob = OptimizationProblem(
-    opt_function, 
-    x0, 
-    p, 
-    lb = lower_bounds, 
-    ub = upper_bounds
-)
+# m=0.05
+num_trials = 5
 
 
-# Run the optimization with NelderMead
-sol = solve(prob, NelderMead(), maxiters=2, show_trace=true)
+creation_func(t) = a1 * exp(-t * k1) + b1
+elimination_func(t) = a2 * exp(-t * k2) + b2
 
-df = DataFrame(Number = sol)
-CSV.write("/users/jmcallister/SynapticMaturation_DataFiles/optimal_parameters.csv", df)
+elim = elimination_func.(0:kesten_timestep:total_time)
+creat = creation_func.(0:kesten_timestep:total_time)
 
 
+rates_var = creat, m, elim, A, lambda
+
+
+state_recs_var_multiple = []
+ihs = []
+mhs = []
+
+for i in 1:num_trials
+    ih_var, mh_var, state_record_var, syn_sizes_var = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
+    push!(state_recs_var_multiple, state_record_var)
+    push!(ihs, ih_var)
+    push!(mhs, mh_var)
+end
+
+develop_survival_multiplee = []
+adult_survival_multiplee = []
+
+for state_recs in state_recs_var_multiple
+    developmental_period_16 = round(Int, (16/total_time)*size(state_recs,2))
+    developmental_period_26 = round(Int, (26/total_time)*size(state_recs,2))
+    
+    adult_period = round(Int, (70/total_time)*size(state_recs,2))
+    adult_period2 = round(Int, (88/total_time)*size(state_recs,2))
+
+    developmental_survival_fraction1 = new_compute_survival_fraction007(state_recs[:,developmental_period_16:developmental_period_26])
+    adulthood_survival_fraction1 = new_compute_survival_fraction007(state_recs[:,adult_period:adult_period2])
+    push!(develop_survival_multiplee, developmental_survival_fraction1)
+    push!(adult_survival_multiplee, adulthood_survival_fraction1)
+end
+
+dev_ids = collect(0:1:10)
+dev_ids = [round(Int, id/kesten_timestep) for id in dev_ids]
+
+adult_ids = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
+adult_ids = [round(Int, id/kesten_timestep) for id in adult_ids]
+adult_ids3 = [0,1,2,3,4,5,6,8,10,12,14,16,17,18]
+
+development_points_to_match_sim = [mean(develop_survival_multiplee)[id+1] for id in dev_ids]
+development_points_to_match_data = [1.0, 0.661896208, 0.52522361,0.468246877, 0.421466905, 0.397137735, 0.376028593, 0.364221812, 0.344543843, 0.348389962, 0.340339859]
+
+adulthood_points_to_match_sim = [mean(adult_survival_multiplee)[id+1] for id in adult_ids]
+adulthood_points_to_match_data = [1.0, 0.870199702, 0.82058372, 0.788018458, 0.775729644, 0.755248343, 0.7490909229625357, 0.7400000138716264, 0.7290909507057883, 0.7163636641068893, 0.7054545315829192, 0.694545468417081, 0.688556071, 0.681643617]
+
+development_survival_error = development_points_to_match_sim - development_points_to_match_data
+adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
+
+total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
+
+
+
+developmentperiodplot = 16:10/length(develop_survival_multiplee[1]):26
+adulthoodperiodplot = 0:18/length(adult_survival_multiplee[1]):18
+
+l1 = length(developmentperiodplot) - length(develop_survival_multiplee[1])
+l2 = length(adulthoodperiodplot) - length(adult_survival_multiplee[1])
+
+length(developmentperiodplot[1:end-l1])
+# Plot survival fraction over time
+developmental_survival_plot = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiplee), xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
+    title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1.05))
+    scatter!(16:1:26, development_points_to_match_data, label="Data",title="Survival Fraction (Early Development)", xlabel="Postnatal day")
+
+adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiplee), xlabel="Days", ylabel="Survival Fraction",
+    title="Synapse Survival Fraction (Adulthood)", lw=2, legend=false, ylim=(0,1.05), xticks=0:1:18,label="Model")
+    scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days", legend=:bottomleft)
+
+survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+# work out the peak value of the combined populations and check if it occurs !at beginning and !end
+smoothed_avg = time_average(mean(ihs)+mean(mhs),100)
+max_val = maximum(smoothed_avg)
+end_val = smoothed_avg[end]
+id_max = argmax(smoothed_avg)
+    
+
+ihs[1]
+
+plot(mean(ihs))
+plot!(mean(mhs))
+plot!(mean(ihs).+mean(mhs))

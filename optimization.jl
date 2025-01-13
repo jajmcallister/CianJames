@@ -336,11 +336,12 @@ function find_optimal_parameters(x,p)
     end_val = smoothed_avg[end]
     id_max = argmax(smoothed_avg)
     
-
+    #penalise if the maximum/bump occurs at either the beginning or the end
     if id_max < 2500 || id_max > 8000
         total_error *= 2
     end
     
+    # penalising if the bump does not rise very high
     if max_val - end_val < 0.1*max_val
         total_error *= 2
     end
@@ -419,3 +420,4 @@ CSV.write("C://Users/B00955735/OneDrive - Ulster University/Desktop/paramsfile.c
 
 
 solvals = 0.9, 0.03333333333333333, 0.2, 1.8, 0.1, 0.2, 0.1, 0.05, 0.5
+[0.9, 0.03333333333333333, 0.2, 1.8, 0.17500000000000002, 0.2, 0.05, 0.05, 0.5]
