@@ -15,7 +15,7 @@ kesten_time_step = 0.01
 
 
 # Exponential parameter λ
-A = i
+A = 0.01
 λ = 2
 
 

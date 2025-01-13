@@ -73,7 +73,7 @@ function run_simulation_diffeq_var(total_time, total_pool_size, paramss, ε, η,
             synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
         end
 
-        kesten_update_var!(synapse_sizes,ε, η, σ_ε, σ_η)
+        synapse_sizes = kesten_update_var(synapse_sizes,ε, η, σ_ε, σ_η)
 
         push!(synapse_sizes_history, synapse_sizes)
 
@@ -84,13 +84,15 @@ function run_simulation_diffeq_var(total_time, total_pool_size, paramss, ε, η,
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-function kesten_update_var!(sizes, ε, η, σ_ε, σ_η)
+function kesten_update_var(sizes, ε, η, σ_ε, σ_η)
+    sizes = deepcopy(sizes)
     for i in 1:length(sizes)
         ε_i = rand(Normal(ε, σ_ε))
         η_i = rand(Normal(η, σ_η))
         new_size = ε_i * sizes[i] + η_i
         sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
     end
+    return sizes
 end
 
 # Parameters
@@ -116,14 +118,15 @@ plot(creation_func.(0:1:200), ylim=(0,1), label="creation")
 plot!(elimination_func.(0:1:200), label="elimination")
 
 
-c, m, e, i = 0.2,0.2,0.01,0.05
-m, i, λ = 0.2,0.1,2
-λ = lambda
-lambda = 2
-paramss = (m, i, λ)
+# c, m, e, i = 0.2,0.2,0.01,0.05
+# m, i, λ = 0.2,0.1,2
+# λ = lambda
+# lambda = 2
+i = A
+paramss = (m, i, lambda)
 
-a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
-params=(m, i, lambda)
+# a1,a2,k1,k2,b1,b2,m,i =0.5, 0.5, 0.5, 0.5, 0.1, 0.1, 0.5, 0.5
+
 # Run simulation
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
 
@@ -136,16 +139,16 @@ poold = sol[3,:]
 final_I_value = (i*total_pool_size*(a1+b1))/(m*(a1+b1)+i*(a1+a2+b1+b2))
 final_M_value = (total_pool_size*(a1+b1))/(a1+b1+(i/m)*(a1+a2+b1+b2))
 
-var_plot = plot(time_array_var, immature_population_var, label = "Immature Synapses", color="red", lw=1, legend=:bottomright)
-plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=1, xlabel="Time",ylabel="Population size")
+var_plot = plot(time_array_var, immature_population_var, lw=3, label = "Immature Synapses", color="red", legend=:bottomright)
+plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time",ylabel="Population size")
 
-plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Mature+Immature")
+plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Combined", title="Populations (Differential Equations)")
 
-hline!([immature_population_var[end] + mature_population_var[end]], label=false)
+hline!([immature_population_var[end] + mature_population_var[end]], label=false,xlim=(50,100),ylim=(800,900))
 # hline!([final_I_value,final_M_value],label="Steady state solutions", linestyle= :dash,lw=3)
 
 
-# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populationsplot.png")
+# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/diff_eq_populationsplot.png")
 
 
 

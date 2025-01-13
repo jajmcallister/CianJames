@@ -21,9 +21,66 @@ function compute_survival_fraction(state_records)
 end
 
 
-a1,k1,b1,a2,k2,b2,m,A,lambda = sol #,ε,η,σ_ε, σ_η = sol
 
-total_pool_size = 1000
+function new_compute_survival_fraction(state_records)
+    total_time_steps = size(state_records, 2)
+
+    # Identify the initial population
+    initial_existing_synapses = findall(x -> x != 0, state_records[:, 1])
+    
+    # Create a set to track permanently eliminated synapses
+    permanently_eliminated = Set{Int}()
+
+    # Initialize array to store the survival fraction over time
+    survival_fraction = zeros(total_time_steps)
+
+    # Loop over each time step and compute the fraction of surviving synapses
+    for t in 1:total_time_steps
+        # Update the set of permanently eliminated synapses
+        for idx in initial_existing_synapses
+            if state_records[idx, t] == 0
+                push!(permanently_eliminated, idx)
+            end
+        end
+        
+        # Find how many of the initial synapses are still in the existing population and not permanently eliminated
+        surviving_synapses = count(x -> !(x in permanently_eliminated) && state_records[x, t] != 0, initial_existing_synapses)
+        
+        # Compute survival fraction as the ratio of surviving synapses to the initial population size
+        survival_fraction[t] = surviving_synapses / length(initial_existing_synapses)
+    end
+
+    return survival_fraction
+end
+
+
+
+
+a1,k1,b1,a2,k2,b2,m,A,lambda = solvals #,ε,η,σ_ε, σ_η = sol
+
+
+a1 = 0.9
+k1 = 1/30
+b1 = 0.2
+a2 = 1.8
+k2 = 1/10
+b2 = 0.2
+
+ε, η = .985, 0.015
+σ_ε, σ_η = .05, .05
+
+A = 0.05
+lambda = 0.5
+
+m=0.05
+
+
+
+
+
+
+
+total_pool_size = 100
 total_time = 100
 kesten_timestep = 0.01
 creation_func(t) = a1 * exp(-t * k1) + b1
@@ -36,7 +93,7 @@ creat = creation_func.(0:kesten_timestep:total_time)
 plot(elim)
 plot!(creat)
 
-# m=0.01
+
 using Distributions
 rates_var = creat, m, elim, i, A, lambda;
 ih_var, mh_var, state_records_var, syn_sizes_var = track_times_variable_rates(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -49,15 +106,15 @@ vline!([16,26], label="Developmental period")
 vline!([70], label = "Adulthood")
 
 
-developmental_period_16 = round(Int, (6/100)*size(state_records_var,2))
-developmental_period_26 = round(Int, (16/100)*size(state_records_var,2))
+developmental_period_16 = round(Int, (16/100)*size(state_records_var,2))
+developmental_period_26 = round(Int, (26/100)*size(state_records_var,2))
 
 adult_period = round(Int, (70/100)*size(state_records_var,2))
 adult_period2 = round(Int, (88/100)*size(state_records_var,2))
 
 # Compute survival fraction
-developmental_survival_fraction = compute_survival_fraction(state_records_var[:,developmental_period_16:developmental_period_26])
-adulthood_survival_fraction = compute_survival_fraction(state_records_var[:,adult_period:adult_period2])
+developmental_survival_fraction = new_compute_survival_fraction(state_records_var[:,developmental_period_16:developmental_period_26])
+adulthood_survival_fraction = new_compute_survival_fraction(state_records_var[:,adult_period:adult_period2])
 
 plot(developmental_survival_fraction)
 plot(adulthood_survival_fraction)
@@ -82,7 +139,7 @@ survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, 
 
 # Multiple trials
 
-num_trials = 2
+num_trials = 5
 
 state_recs_var_multiple = []
 ihs = []
@@ -97,22 +154,38 @@ for i in 1:num_trials
     push!(mhs, mh_var)
 end
 
-syn_sizes[1]
 
-plot(0:kesten_timestep:100, (mean(ihs).+mean(mhs)))
-vline!([100*argmax((mean(ihs).+mean(mhs)))/length((mean(ihs).+mean(mhs)))])
+plot(time_average(mean(ihs)+mean(mhs),500))
+vline!([argmax(time_average(mean(ihs)+mean(mhs),100))])
+smoothed_av = time_average(mean(ihs)+mean(mhs),100)
+max_v = maximum(smoothed_av)
+end_v = smoothed_av[end]
+
+id_max = argmax(smoothed_av)
+
+
+popolot = plot(0:kesten_timestep:100, mean(ihs), label="Immature",lw=3, color="red")
+plot!(0:kesten_timestep:100, mean(mhs),label="Mature",lw=3, color="blue")
+plot!(0:kesten_timestep:100, (mean(ihs).+mean(mhs)),label="Combined",color="green", lw=3, title="Populations (Random Walks)", xlabel="Days")
+
+# savefig(popolot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/randwalks_population_plot.png")
+
+# vline!([100*argmax((mean(ihs).+mean(mhs)))/length((mean(ihs).+mean(mhs)))])
+
+size_dist = histogram(syn_sizes[1], bins=0:0.2:5, xlabel="Size", title="Distribution of synapse size")
+# savefig(size_dist, "C://Users/B00955735/OneDrive - Ulster University/Desktop/dist.png")
+
 
 develop_survival_multiple = []
 adult_survival_multiple = []
 
 for state_recs in state_recs_var_multiple
-    developmental_survival_fraction1 = compute_survival_fraction(state_recs[:,developmental_period_16:developmental_period_26])
-    adulthood_survival_fraction1 = compute_survival_fraction(state_recs[:,adult_period:adult_period2])
+    developmental_survival_fraction1 = new_compute_survival_fraction(state_recs[:,developmental_period_16:developmental_period_26])
+    adulthood_survival_fraction1 = new_compute_survival_fraction(state_recs[:,adult_period:adult_period2])
     push!(develop_survival_multiple, developmental_survival_fraction1)
     push!(adult_survival_multiple, adulthood_survival_fraction1)
 end
 
-mean(develop_survival_multiple)
 
 developmental_survival_plot_trials = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiple), ribbon=std(develop_survival_multiple), xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
     title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1.05))
@@ -157,18 +230,19 @@ pp = plot(dev_scatter, adult_scatter, layout=(2,1))
 
 
 developmental_survival_plot_trials = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiple), ribbon=std(develop_survival_multiple), xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
-    title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1.05),label="Model")
+    title="Synapse Survival Fraction (Early Development)", lw=2, fillalpha=0.2, legend=false, ylim=(0,1.05),label="Model")
 scatter!(16:1:26, development_points_to_match_data, label="Data",title="Survival Fraction (Early Development)", xlabel="Postnatal day")
 # scatter!(16:1:26, development_points_to_match_sim, ylim=(0,1.05), label="Model", xticks=16:1:26)
 
 
-adult_survival_plot_trials = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiple), ribbon=std(adult_survival_multiple), xlabel="Days", ylabel="Survival Fraction",
+adult_survival_plot_trials = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiple), ribbon=std(adult_survival_multiple), fillalpha=0.2, xlabel="Days", ylabel="Survival Fraction",
 title="Synapse Survival Fraction (Adulthood)", lw=2, legend=false, ylim=(0,1.05), xticks=0:1:18, label="Model")
 scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days", legend=:bottomleft)
 # scatter!(adult_ids, [mean(adult_survival_multiple)[id+1] for id in adult_ids], ylim=(0,1.05), label="Model", xticks=0:1:18)
 
 
 ppp = plot(developmental_survival_plot_trials, adult_survival_plot_trials, layout=(2,1))
-# savefig(ppp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/parameter_fit.png")
+# savefig(ppp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survival_fraction.png")
+
 
 
