@@ -247,7 +247,7 @@ kesten_timestep = 0.01
 # k2 = 1/10
 # b2 = 0.2
 
-a1,k1,b1,a2,k2,b2,m,A,lambda = 0.9, 0.03333333333333333, 0.2, 3, 0.17500000000000002, 0.2, 0.05, 0.05, 3.
+a1,k1,b1,a2,k2,b2,m,A,lambda = 0.9, 0.03333333333333333, 0.2, 3, 0.17500000000000002, 0.2, 0.05, 0.05, 1.
 ε, η = .985, 0.015
 σ_ε, σ_η = .05, .05
 
@@ -467,14 +467,20 @@ poold = sol[3,:]
 
 id_of_bump = argmax(immature_population_var+mature_population_var)
 
+xtickss = collect(0:20:120)
+push!(xtickss, trunc(Int,time_array_var[id_of_bump]))
+xtickss=sort(xtickss)
 
-
-var_plot = plot!(time_array_var, immature_population_var, lw=3, label = "Immature Synapses", color="red", legend=:bottomright)
-plot!(time_array_var, mature_population_var, label = "Mature Synapses", color="blue", lw=3, xlabel="Time (Days)",ylabel="Population size")
-plot!(time_array_var, immature_population_var+mature_population_var, lw=3, color="green", label="Combined", title="Populations (Differential Equations)")
+using Plots.PlotMeasures
+var_plot = plot(0:kesten_timestep:total_time, lw=2, fillalpha=0.2, mean(ihs), ribbon=std(ihs)/num_trials, label="Immature (Random walks)", color=:pink)
+plot!(0:kesten_timestep:total_time, mean(mhs), lw=2, ribbon=std(mhs)/num_trials, color=:skyblue1, label="Mature (Random walks)")
+plot!(0:kesten_timestep:total_time, mean(ihs)+mean(mhs), color=:palegreen, lw=2,ribbon=std(ihs+mhs)/num_trials, label="Combined (Random walks)")
+plot!(time_array_var, immature_population_var, lw=3, label = "Immature (Diff Eq)", legend=:bottomright, color=:red)
+plot!(time_array_var, mature_population_var, color=:blue, label = "Mature (Diff Eq)", lw=3, xlabel="Time (Days)",ylabel="Population size")
+plot!(time_array_var, immature_population_var+mature_population_var, lcolor=:green, w=3,label="Combined (Diff Eq)", title="Populations")
 vline!([time_array_var[id_of_bump]],label="Where bump happens")
 vspan!([16,26],fillalpha=0.1,label="Developmental period")
-vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=collect(0:20:120),legend=:right)
+vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=xtickss,legend=:outerright,size=(1000,500),bottommargin=5mm, leftmargin=5mm)
 
 
 
