@@ -2,6 +2,7 @@ using Random, StatsBase, DifferentialEquations, Distributions, Statistics, Plots
 
 
 #0.9, 0.03333333333333333, 0.2, 3, 0.17500000000000002, 0.2, 0.05, 0.05, 3.
+#1.055102040816327, 0.046938776, 2.1020408163265314, 0.12448979591836733, 0.066326531, 0.066326531, 0.5897959183673469
 
 
 function new_compute_survival_fraction007(state_records)
@@ -199,6 +200,7 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
         filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
         append!(pool_pop, immature_to_pool_indxs)
 
+
         synapse_sizes = kesten_update_new007(synapse_sizes, ε, η, σ_ε, σ_η)
     
 
@@ -234,6 +236,172 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 end
 
+function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, rates, εs, ηs, σ_εs, σ_ηs, kesten_time_step)
+    pool = total_pool_size
+    steps = trunc(Int, total_time / kesten_time_step)
+    immature = 0
+    mature = 0
+    pool_history = []
+    immature_history = []
+    mature_history = []
+
+    state_records = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+    state_records_heatmap = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+
+    I_pop = []
+    M_pop = []
+    pool_pop = [i for i in 1:total_pool_size]
+    cr, m, el, A, lambda  = rates
+
+    push!(pool_history, pool)
+    push!(immature_history, immature)
+    push!(mature_history, mature)
+    
+    # Synapse sizes for mature population
+    synapse_sizes = Float64[]
+    synapse_size_history = []
+    
+    
+    # Simulation
+    for t in 1:steps
+        # 1 Transitions from pool to immature
+        pool_to_immature = 0
+        transition_prob1 = cr[t] * kesten_timestep
+        for i in 1:pool
+            if rand() < transition_prob1
+                pool_to_immature += 1
+            end
+        end
+        pool -= pool_to_immature
+        immature += pool_to_immature
+    
+        # 2 Transitions from immature to mature
+        immature_to_mature = 0
+        transition_prob2 = m * kesten_timestep  # Probability for each immature synapse to become mature
+
+        for i in 1:immature
+            if rand() < transition_prob2
+                immature_to_mature += 1
+            end
+        end
+
+        # Update the counts
+        immature -= immature_to_mature
+        mature += immature_to_mature
+    
+        # Initialize new mature synapse sizes
+        for i in 1:immature_to_mature
+            push!(synapse_sizes, 0.0)  # Initial size of a new mature synapse
+        end
+    
+        synapse_sizes = sort(synapse_sizes, rev=true)
+    
+        # 3 Transitions from mature to immature
+        mature_to_immature_indices = []
+        for (id, size) in enumerate(synapse_sizes)
+            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
+            if rand() < prob
+                push!(mature_to_immature_indices, id)
+            end
+        end
+
+        
+    
+        # Update states based on calculated probabilities
+        mature_to_immature = length(mature_to_immature_indices)
+        mature_to_immature = round(Int, mature_to_immature)
+        mature -= mature_to_immature
+        immature += mature_to_immature
+    
+        # Remove synapse sizes for synapses that became immature
+        # Sort indices in reverse order
+        sorted_indices = sort(mature_to_immature_indices, rev=true)
+    
+        # Delete elements at the specified indices
+        for idx in sorted_indices
+            deleteat!(synapse_sizes, idx)
+        end
+    
+        # 4 Transitions from immature to pool
+        immature_to_pool = 0
+        transition_prob3 = el[t] * kesten_timestep  # Probability for each immature synapse to transition to the pool
+
+        for i in 1:immature
+            if rand() < transition_prob3
+                immature_to_pool += 1
+            end
+        end
+
+        # Update the counts
+        immature -= immature_to_pool
+        pool += immature_to_pool
+
+        
+        push!(pool_history, pool)
+        push!(immature_history, immature)
+        push!(mature_history, mature)
+
+
+        # 1. Pool to immature
+        pool_to_immature_count = abs(trunc(Int, pool_to_immature))
+        pool_to_immature_indxs = safe_sample007(pool_pop, pool_to_immature_count, replace=false)
+        filter!(x -> !in(x, pool_to_immature_indxs), pool_pop)
+        append!(I_pop, pool_to_immature_indxs)
+        
+        # 2. Immature to mature
+        immature_to_mature_count = trunc(Int, immature_to_mature)
+        immature_to_mature_indxs = safe_sample007(I_pop, immature_to_mature_count, replace=false)
+        filter!(x -> !in(x, immature_to_mature_indxs), I_pop)
+        append!(M_pop, immature_to_mature_indxs)
+        
+        # 3. Mature to immature
+        mature_to_immature_count = abs(trunc(Int, mature_to_immature))
+        mature_to_immature_indxs = safe_sample007(M_pop, mature_to_immature_count, replace=false)
+        filter!(x -> !in(x, mature_to_immature_indxs), M_pop)
+        append!(I_pop, mature_to_immature_indxs)
+        
+        # 4. Immature to pool
+        immature_to_pool_count = trunc(Int, immature_to_pool)
+        immature_to_pool_indxs = safe_sample007(I_pop, immature_to_pool_count, replace=false)
+        filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
+        append!(pool_pop, immature_to_pool_indxs)
+        
+        ε, η, σ_ε, σ_η = εs[t], ηs[t], σ_εs[t], σ_ηs[t]
+
+        synapse_sizes = kesten_update_new007(synapse_sizes, ε, η, σ_ε, σ_η)
+    
+
+        push!(synapse_size_history, synapse_sizes)
+
+        # Now recording the current state of the synapses in the state record matrix
+        for j in 1:total_pool_size
+            if j in pool_pop
+                state_records[j,t] = 0
+            elseif j in I_pop
+                state_records[j,t] = 1
+            elseif j in M_pop
+                state_records[j,t] = 2
+            end
+        end
+
+        # Record the current state in the state_records_heatmap matrix
+        for j in 1:total_pool_size
+            if j in pool_pop
+                state_records_heatmap[j, t] = 0 # in the pool, size = 0
+            elseif j in I_pop
+                state_records_heatmap[j, t] = 0  # in immature population size is 0
+            elseif j in M_pop
+                idx = findfirst(==(j), M_pop)
+                if idx !== nothing
+                    state_records_heatmap[j, t] = synapse_sizes[idx]
+                end
+            end
+        end
+    
+    end
+
+    return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
+end
 
 total_pool_size = 100
 total_time = 120
@@ -247,12 +415,13 @@ kesten_timestep = 0.01
 # k2 = 1/10
 # b2 = 0.2
 
-a1,k1,b1,a2,k2,b2,m,A,lambda = 0.9, 0.03333333333333333, 0.2, 3, 0.17500000000000002, 0.2, 0.05, 0.05, 1.
+b1 = 0.2
+b2 = 0.2
+
+# a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
+a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 1.
 ε, η = .985, 0.015
 σ_ε, σ_η = .05, .05
-
-
-
 
 
 
@@ -262,10 +431,10 @@ elimination_func(t) = a2 * exp(-t * k2) + b2
 elim = elimination_func.(0:kesten_timestep:total_time)
 creat = creation_func.(0:kesten_timestep:total_time)
 
+ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
+plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel="Rate", xlabel="Days")
 
-plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
-plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate")
-
+savefig(ec_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ec_rate.png")
 # creat = sigmoid_creation.(0:kesten_timestep:total_time)
 
 
@@ -289,8 +458,55 @@ for i in 1:num_trials
     push!(syn_size_heatmaps_trials,syn_heatmap)
 end
 
+syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),ylabel="Synapse ID", xlabel="Days",colorbar_title="Synapse size")
+# savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
 
-heatmap(syn_size_heatmaps_trials[1])
+
+hist_matrices = []
+for i in 1:num_trials
+    # Define histogram bins (consistent for all columns)
+    bin_edges = 0:0.1:1.5  # Adjust bin size as needed
+    bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) / 2  # Centers for plotting
+
+    # Compute histograms for each time point (column)
+    num_bins = length(bin_edges) - 1
+    num_time_points = size(syn_size_heatmaps_trials[i], 2)
+    hist_matrix = zeros(num_bins, num_time_points)
+
+    for t in 1:num_time_points
+        hist = fit(Histogram, syn_size_heatmaps_trials[i][:, t], bin_edges)
+        hist_matrix[:, t] = hist.weights  # Store bin counts for this time point
+    end
+    push!(hist_matrices, hist_matrix)
+end
+
+bin_edges = 0:0.1:1.5  # Adjust bin size as needed
+bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) / 2  # Centers for plotting
+num_bins = length(bin_edges) - 1
+num_time_points = size(syn_size_heatmaps_trials[1], 2)
+
+
+# Plot the heatmap
+hists = heatmap(
+    1:num_time_points,               # Time points on x-axis
+    bin_centers,                     # Bin centers on y-axis
+    mean(hist_matrices),                     # Heatmap data
+    xlabel = "Time",
+    ylabel = "Synapse Size",
+    colorbar_title = "Count",
+    title = "Histograms of synapse size across time", clims=(0,5)
+)
+
+
+
+tt = 0.01:kesten_timestep:total_time
+indi = plot(tt,syn_size_heatmaps_trials[1][60,:], label="Synapse 1")
+plot!(tt,syn_size_heatmaps_trials[1][4,:], label="Synapse 2")
+plot!(tt, syn_size_heatmaps_trials[1][1,:], label="Synapse 3",color="green", xticks=collect(0:20:120),xlabel="Days",ylabel="Synapse size")
+
+savefig(indi, "C://Users/B00955735/OneDrive - Ulster University/Desktop/indi.png")
+
+
 
 
 
@@ -327,7 +543,7 @@ development_survival_error = development_points_to_match_sim - development_point
 adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
 
 total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
-
+total_error = sum(development_survival_error.^2)/length(development_survival_error) + sum(adulthood_survival_error.^2)/length(adulthood_survival_error)
 
 
 developmentperiodplot = 16:10/length(develop_survival_multiplee[1]):26
@@ -349,7 +565,7 @@ adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_mu
 survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1))
 
 
-
+savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survival.png")
 
 
 
@@ -464,7 +680,7 @@ time_array_var = sol.t
 immature_population_var = sol[1, :]
 mature_population_var = sol[2, :]
 poold = sol[3,:]
-
+maximum(immature_population_var+mature_population_var)
 id_of_bump = argmax(immature_population_var+mature_population_var)
 
 xtickss = collect(0:20:120)
@@ -481,9 +697,9 @@ plot!(time_array_var, immature_population_var+mature_population_var, lcolor=:gre
 vline!([time_array_var[id_of_bump]],label="Where bump happens")
 vspan!([16,26],fillalpha=0.1,label="Developmental period")
 vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=xtickss,legend=:outerright,size=(1000,500),bottommargin=5mm, leftmargin=5mm)
+# hline!([85.222],xlim=(35,50),ylim=(80,90))
 
-
-
+savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varplot.png")
 
 # Histogram of final synapse size distribution
 # Diff Eq
@@ -527,3 +743,106 @@ plot!(0:kesten_timestep:100,doub_c)
 ########################
 ########################
 
+
+
+using Optimization
+rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
+x0 = zeros(2)
+p = [1.0, 100.0]
+
+prob = OptimizationProblem(rosenbrock, x0, p)
+
+using OptimizationOptimJL
+sol = solve(prob, NelderMead(), g_tol=1e-9)
+
+
+
+#############################
+###########################
+########################
+# Variable Kesten Process Values
+########################
+############################
+#############################
+
+q1,q2,q3,q4 = .985, 0.015, .05, .05
+w1, w2, w3, w4 = 1/100,1/100,1/100,1/100
+εs_func(t) = q1 #*exp(-t*w1)
+ηs_func(t) = q2 #*exp(-t*w2)
+σ_εs_func(t) = q3*exp(-t*w3)
+σ_ηs_func(t) = q4*exp(-t*w4)
+
+
+plot(ts,εs_func.(ts))
+
+εs = εs_func.(0:kesten_timestep:total_time)
+ηs = ηs_func.(0:kesten_timestep:total_time)
+σ_εs = σ_εs_func.(0:kesten_timestep:total_time)
+σ_ηs = σ_ηs_func.(0:kesten_timestep:total_time)
+
+rates_var = creat, m, elim, A, lambda
+
+
+state_recs_var_multiple = []
+ihs = []
+mhs = []
+synapse_sizes_multiple = []
+syn_size_heatmaps_trials = []
+
+num_trials = 5
+
+for i in 1:num_trials
+    ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap = track_times_variable_rates_and_kesten_007(total_time, total_pool_size, rates_var, εs, ηs, σ_εs, σ_ηs, kesten_timestep);
+    push!(state_recs_var_multiple, state_record_var)
+    push!(ihs, ih_var)
+    push!(mhs, mh_var)
+    push!(synapse_sizes_multiple, syn_sizes_var)
+    push!(syn_size_heatmaps_trials,syn_heatmap)
+end
+
+syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),ylabel="Synapse ID", xlabel="Days",colorbar_title="Synapse size")
+# savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
+
+hist_matrices = []
+for i in 1:num_trials
+    # Define histogram bins (consistent for all columns)
+    bin_edges = 0:0.1:2.0  # Adjust bin size as needed
+    bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) / 2  # Centers for plotting
+
+    # Compute histograms for each time point (column)
+    num_bins = length(bin_edges) - 1
+    num_time_points = size(syn_size_heatmaps_trials[i], 2)
+    hist_matrix = zeros(num_bins, num_time_points)
+
+    for t in 1:num_time_points
+        hist = fit(Histogram, syn_size_heatmaps_trials[i][:, t], bin_edges)
+        hist_matrix[:, t] = hist.weights  # Store bin counts for this time point
+    end
+    push!(hist_matrices, hist_matrix)
+end
+
+bin_edges = 0:0.1:2.0  # Adjust bin size as needed
+bin_centers = (bin_edges[1:end-1] .+ bin_edges[2:end]) / 2  # Centers for plotting
+num_bins = length(bin_edges) - 1
+num_time_points = size(syn_size_heatmaps_trials[1], 2)
+
+
+# Plot the heatmap
+hists = heatmap(
+    1:num_time_points,               # Time points on x-axis
+    bin_centers,                     # Bin centers on y-axis
+    mean(hist_matrices),                     # Heatmap data
+    xlabel = "Time",
+    ylabel = "Synapse Size",
+    colorbar_title = "Count",
+    title = "Histograms of synapse size across time",clims=(1,2)
+)
+
+# savefig(hists, "C://Users/B00955735/OneDrive - Ulster University/Desktop/hists.png")
+
+
+
+tt = 0.01:kesten_timestep:total_time
+indi = plot(tt,syn_size_heatmaps_trials[1][60,:], label="Synapse 1")
+plot!(tt,syn_size_heatmaps_trials[1][4,:], label="Synapse 2")
+plot!(tt, syn_size_heatmaps_trials[1][1,:], label="Synapse 3",color="green", xticks=collect(0:20:120),xlabel="Days",ylabel="Synapse size")
