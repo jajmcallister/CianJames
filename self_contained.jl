@@ -233,7 +233,7 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
     
     end
 
-    return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
+    return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap, synapse_size_history
 end
 
 function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, rates, εs, ηs, σ_εs, σ_ηs, kesten_time_step)
@@ -403,7 +403,7 @@ function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 end
 
-total_pool_size = 100
+total_pool_size = 1000
 total_time = 120
 kesten_timestep = 0.01
 
@@ -434,7 +434,7 @@ creat = creation_func.(0:kesten_timestep:total_time)
 ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
 plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel="Rate", xlabel="Days")
 
-savefig(ec_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ec_rate.png")
+# savefig(ec_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ec_rate.png")
 # creat = sigmoid_creation.(0:kesten_timestep:total_time)
 
 
@@ -446,20 +446,53 @@ ihs = []
 mhs = []
 synapse_sizes_multiple = []
 syn_size_heatmaps_trials = []
+synapse_size_history_multiple = []
 
 num_trials = 5
 
 for i in 1:num_trials
-    ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
+    ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
     push!(state_recs_var_multiple, state_record_var)
     push!(ihs, ih_var)
     push!(mhs, mh_var)
     push!(synapse_sizes_multiple, syn_sizes_var)
     push!(syn_size_heatmaps_trials,syn_heatmap)
+    push!(synapse_size_history_multiple, syn)
 end
 
 syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),ylabel="Synapse ID", xlabel="Days",colorbar_title="Synapse size")
 # savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
+
+
+# Plot histograms of synapse weights over time (P15, 25, 55 and 120)
+v1 = vcat([synapse_size_history_multiple[i][1500] for i in 1:num_trials]...)
+v2 = vcat([synapse_size_history_multiple[i][3500] for i in 1:num_trials]...)
+v3 = vcat([synapse_size_history_multiple[i][5500] for i in 1:num_trials]...)
+v4 = vcat([synapse_size_history_multiple[i][1200] for i in 1:num_trials]...) 
+
+h1 = histogram(v1,bins=0:0.1:5,normalize=true,label="P15",c=:grey)
+h2 = histogram(v2,bins=0:0.1:5,normalize=true,label="P35",c=:blue)
+h3 = histogram(v3,bins=0:0.1:5,normalize=true,label="P55",c=:antiquewhite2)
+h4 = histogram(v4,bins=0:0.1:5,normalize=true,label="P120",c=:black)
+
+using StatsBase
+hfit1 = fit(Histogram, v1, bins=0:0.1:5, normalize=true)
+hfit2 = fit(Histogram, v2, bins=0:0.1:5, normalize=true)
+hfit3 = fit(Histogram, v3, bins=0:0.1:5, normalize=true)
+hfit4 = fit(Histogram, v4, bins=0:0.1:5, normalize=true)
+
+r1 = hfit1.edges[1]
+r2 = hfit2.edges[1]
+r3 = hfit3.edges[1]
+r4 = hfit4.edges[1]
+
+x1 = first(r1)+step(r1)/2:step(r1):last(r1)
+x2 = first(r2)+step(r2)/2:step(r2):last(r2)
+x3 = first(r3)+step(r3)/2:step(r3):last(r3)
+x4 = first(r4)+step(r4)/2:step(r4):last(r4)
+
+plot(x1, hfit1.weights, size=(600,150))
+
 
 
 hist_matrices = []
@@ -504,7 +537,7 @@ indi = plot(tt,syn_size_heatmaps_trials[1][60,:], label="Synapse 1")
 plot!(tt,syn_size_heatmaps_trials[1][4,:], label="Synapse 2")
 plot!(tt, syn_size_heatmaps_trials[1][1,:], label="Synapse 3",color="green", xticks=collect(0:20:120),xlabel="Days",ylabel="Synapse size")
 
-savefig(indi, "C://Users/B00955735/OneDrive - Ulster University/Desktop/indi.png")
+# savefig(indi, "C://Users/B00955735/OneDrive - Ulster University/Desktop/indi.png")
 
 
 
@@ -565,7 +598,7 @@ adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_mu
 survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1))
 
 
-savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survival.png")
+# savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survival.png")
 
 
 
@@ -714,26 +747,6 @@ plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
 plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate",ylim=(0,2.5))
 
 
-
-
-jj = -5
-kk = 4
-ll = 0.1
-mm = -80
-
-
-aa = -0.5
-bb = 2
-cc = 5
-
-sigmoid_creation(t) = 0.2 + jj/(kk+exp(-ll*(t+mm))) - jj/kk
-double_exp_creation(t) = 0.2 + aa*(exp(-t/bb)-exp(-t/cc))
-
-
-sig_c = sigmoid_creation.(0:0.01:100)
-doub_c = double_exp_creation.(0:0.01:100)
-plot(0:kesten_timestep:100,sig_c,ylim=(0,2))
-plot!(0:kesten_timestep:100,doub_c)
 
 
 
