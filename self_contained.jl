@@ -403,7 +403,7 @@ function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 end
 
-total_pool_size = 1000
+total_pool_size = 100
 total_time = 120
 kesten_timestep = 0.01
 
@@ -420,8 +420,8 @@ b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
 a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 1.
-ε, η = .985, 0.015
-σ_ε, σ_η = .05, .05
+ε, η = .985, 0.1
+σ_ε, σ_η = .5, .5
 
 
 
@@ -468,30 +468,12 @@ syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0
 v1 = vcat([synapse_size_history_multiple[i][1500] for i in 1:num_trials]...)
 v2 = vcat([synapse_size_history_multiple[i][3500] for i in 1:num_trials]...)
 v3 = vcat([synapse_size_history_multiple[i][5500] for i in 1:num_trials]...)
-v4 = vcat([synapse_size_history_multiple[i][1200] for i in 1:num_trials]...) 
+v4 = vcat([synapse_size_history_multiple[i][1200-1] for i in 1:num_trials]...) 
 
-h1 = histogram(v1,bins=0:0.1:5,normalize=true,label="P15",c=:grey)
-h2 = histogram(v2,bins=0:0.1:5,normalize=true,label="P35",c=:blue)
-h3 = histogram(v3,bins=0:0.1:5,normalize=true,label="P55",c=:antiquewhite2)
-h4 = histogram(v4,bins=0:0.1:5,normalize=true,label="P120",c=:black)
-
-using StatsBase
-hfit1 = fit(Histogram, v1, bins=0:0.1:5, normalize=true)
-hfit2 = fit(Histogram, v2, bins=0:0.1:5, normalize=true)
-hfit3 = fit(Histogram, v3, bins=0:0.1:5, normalize=true)
-hfit4 = fit(Histogram, v4, bins=0:0.1:5, normalize=true)
-
-r1 = hfit1.edges[1]
-r2 = hfit2.edges[1]
-r3 = hfit3.edges[1]
-r4 = hfit4.edges[1]
-
-x1 = first(r1)+step(r1)/2:step(r1):last(r1)
-x2 = first(r2)+step(r2)/2:step(r2):last(r2)
-x3 = first(r3)+step(r3)/2:step(r3):last(r3)
-x4 = first(r4)+step(r4)/2:step(r4):last(r4)
-
-plot(x1, hfit1.weights, size=(600,150))
+h1 = histogram(v1,bins=0:1:30,normalize=true,label="P15",c=:lightgrey)
+h2 = histogram(v2,bins=0:1:30,normalize=true,label="P35",c=:blue)
+h3 = histogram(v3,bins=0:1:40,normalize=true,label="P55",c=:antiquewhite2)
+h4 = histogram(v4,bins=0:1:30,normalize=true,label="P120",c=:black)
 
 
 
