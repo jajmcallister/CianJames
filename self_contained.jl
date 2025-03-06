@@ -613,7 +613,7 @@ id_max = argmax(smoothed_avg)
 p1 = plot(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trials), lw=5, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
 plot!(0:kesten_timestep:total_time, mean(ihs), ribbon=std(ihs)/sqrt(num_trials), lw=5, c=:magenta, label="Immature synapses")
 plot!(title="Population Dynamics (Random Walks Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,legendfontsize=12)
+plot!(grid=false,legendfontsize=12,ylim=(0,600))
 
 
 
