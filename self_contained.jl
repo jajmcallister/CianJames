@@ -405,7 +405,7 @@ end
 
 total_pool_size = 1000
 total_time = 120
-kesten_timestep = .2
+kesten_timestep = 0.2
 
 
 # a1 = 0.9
@@ -419,7 +419,7 @@ b1 = 0.2
 b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
-a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 1.
+a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 2.
 ε, η = .985, 1-ε
 σ_ε, σ_η = .1, .1
 
@@ -448,7 +448,7 @@ synapse_sizes_multiple = []
 syn_size_heatmaps_trials = []
 synapse_size_history_multiple = []
 
-num_trials = 2
+num_trials = 10
 
 for i in 1:num_trials
     ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -488,8 +488,8 @@ plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color
         xlabel="Synaptic weight (a.u.)", grid=false, xlim=(-0.2,3), title="Distributions of synaptic weight over time",
         legendfontsize=12, ylabel="Density")
 
-# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot.png")
-# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot.svg")
+# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot1.png")
+# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot1.svg")
 
 
 
@@ -610,9 +610,12 @@ end_val = smoothed_avg[end]
 id_max = argmax(smoothed_avg)
 
 
-plot(0:kesten_timestep:total_time, mean(ihs))
-plot!(0:kesten_timestep:total_time,mean(mhs))
-plot!(0:kesten_timestep:total_time,mean(ihs).+mean(mhs))
+p1 = plot(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trials), lw=5, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
+plot!(0:kesten_timestep:total_time, mean(ihs), ribbon=std(ihs)/sqrt(num_trials), lw=5, c=:magenta, label="Immature synapses")
+plot!(title="Population Dynamics (Random Walks Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
+plot!(grid=false,legendfontsize=12)
+
+
 
 
 state_recs_var_multiple[1]
@@ -704,10 +707,10 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-total_pool_size = 100
+total_pool_size = 1000
 ε, η = .985, 1-ε
 σ_ε, σ_η = .1, .1
-kesten_timestep = .5
+kesten_timestep = .2
 i=A
 paramss = (m, i, lambda)
 
@@ -738,13 +741,15 @@ vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=xtickss,legend=:o
 
 # savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varplot.png")
 
-# Histogram of final synapse size distribution
-# Diff Eq
-histogram(synapse_sizes_history_var[150],nbins=20)
-# Rand walks
-histogram(synapse_sizes_multiple[1],nbins=20)
+p2 = plot(time_array_var, mature_population_var, lw=5, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
+plot!(time_array_var, immature_population_var, lw=5, c=:magenta, label="Immature synapses")
+plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
+plot!(grid=false,ylim=(0,600),legendfontsize=12)
 
-
+savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
+savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
+savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
+savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.svg")
 
 # Plot elimination and creation rates
 plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
