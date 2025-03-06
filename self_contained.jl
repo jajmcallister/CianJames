@@ -125,7 +125,7 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
     
         # Initialize new mature synapse sizes
         for i in 1:immature_to_mature
-            push!(synapse_sizes, 0.0)  # Initial size of a new mature synapse
+            push!(synapse_sizes, 0.01)  # Initial size of a new mature synapse
         end
     
         synapse_sizes = sort(synapse_sizes, rev=true)
@@ -403,9 +403,9 @@ function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 end
 
-total_pool_size = 100
+total_pool_size = 1000
 total_time = 120
-kesten_timestep = 0.01
+kesten_timestep = .2
 
 
 # a1 = 0.9
@@ -420,8 +420,8 @@ b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
 a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 1.
-ε, η = .985, 0.1
-σ_ε, σ_η = .5, .5
+ε, η = .985, 1-ε
+σ_ε, σ_η = .1, .1
 
 
 
@@ -448,7 +448,7 @@ synapse_sizes_multiple = []
 syn_size_heatmaps_trials = []
 synapse_size_history_multiple = []
 
-num_trials = 5
+num_trials = 2
 
 for i in 1:num_trials
     ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -464,17 +464,36 @@ syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0
 # savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
 
 
-# Plot histograms of synapse weights over time (P15, 25, 55 and 120)
-v1 = vcat([synapse_size_history_multiple[i][1500] for i in 1:num_trials]...)
-v2 = vcat([synapse_size_history_multiple[i][3500] for i in 1:num_trials]...)
-v3 = vcat([synapse_size_history_multiple[i][5500] for i in 1:num_trials]...)
-v4 = vcat([synapse_size_history_multiple[i][1200-1] for i in 1:num_trials]...) 
+# Plots of synapse weights over time (P15, 25, 55 and 120)
+v1 = vcat([synapse_size_history_multiple[i][trunc(Int,15/kesten_timestep)] for i in 1:num_trials]...)
+v2 = vcat([synapse_size_history_multiple[i][trunc(Int,35/kesten_timestep)] for i in 1:num_trials]...)
+v3 = vcat([synapse_size_history_multiple[i][trunc(Int,55/kesten_timestep)] for i in 1:num_trials]...)
+v4 = vcat([synapse_size_history_multiple[i][trunc(Int,120/kesten_timestep)] for i in 1:num_trials]...) 
 
-h1 = histogram(v1,bins=0:1:30,normalize=true,label="P15",c=:lightgrey)
-h2 = histogram(v2,bins=0:1:30,normalize=true,label="P35",c=:blue)
-h3 = histogram(v3,bins=0:1:40,normalize=true,label="P55",c=:antiquewhite2)
-h4 = histogram(v4,bins=0:1:30,normalize=true,label="P120",c=:black)
+# Compute kernel density estimate
+kde_result1 = kde(v1,bandwidth=0.1)
+kde_result2 = kde(v2,bandwidth=0.1)
+kde_result3 = kde(v3,bandwidth=0.1)
+kde_result4 = kde(v4,bandwidth=0.1)
 
+color1 = RGB(176/255, 178/255, 240/255)
+color2 = RGB(78/255,84/255,182/255)
+color3 = RGBA(221/255, 221/255, 221/255, 255/255)
+color4 = RGB(4/255, 4/255, 4/255)
+
+distsplot = plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", color=color1)
+plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
+plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
+plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4,
+        xlabel="Synaptic weight (a.u.)", grid=false, xlim=(-0.2,3), title="Distributions of synaptic weight over time",
+        legendfontsize=12, ylabel="Density")
+
+# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot.png")
+# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot.svg")
+
+
+
+ihs
 
 
 hist_matrices = []
@@ -509,7 +528,7 @@ hists = heatmap(
     xlabel = "Time",
     ylabel = "Synapse Size",
     colorbar_title = "Count",
-    title = "Histograms of synapse size across time", clims=(0,5)
+    title = "Histograms of synapse size across time", clims=(0,10)
 )
 
 
@@ -589,15 +608,14 @@ smoothed_avg = time_average007(mean(ihs)+mean(mhs),100)
 max_val = maximum(smoothed_avg)
 end_val = smoothed_avg[end]
 id_max = argmax(smoothed_avg)
-    
+
+
 plot(0:kesten_timestep:total_time, mean(ihs))
 plot!(0:kesten_timestep:total_time,mean(mhs))
 plot!(0:kesten_timestep:total_time,mean(ihs).+mean(mhs))
 
 
-
-
-
+state_recs_var_multiple[1]
 
 ############
 ############
@@ -664,16 +682,17 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
         # 1s for synapses in the pool
         pool = fill(1, round(Int, P));
 
-        # Apply Kesten process to mature synapses in N_M
+        
         if N_M > length(synapse_sizes) # If synapses have been added to the mature population since last time
             new_matures = round(Int, N_M) - length(synapse_sizes);
-            append!(synapse_sizes, fill(0.0, new_matures));  # Initialize new mature synapses with size 0.0
+            append!(synapse_sizes, fill(0.01, new_matures));  # Initialize new mature synapses with size 0.0
         elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
             num_delete_matures = length(synapse_sizes) - round(Int, N_M); #find how many need to be deleted
             synapse_sizes = sort(synapse_sizes); # sort the synapse size array
             synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
         end
 
+        # Apply Kesten process to mature synapses in N_M
         synapse_sizes = kesten_update_new007(synapse_sizes,ε, η, σ_ε, σ_η)
 
         push!(synapse_sizes_history, synapse_sizes)
@@ -685,7 +704,10 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-
+total_pool_size = 100
+ε, η = .985, 1-ε
+σ_ε, σ_η = .1, .1
+kesten_timestep = .5
 i=A
 paramss = (m, i, lambda)
 
@@ -703,7 +725,7 @@ push!(xtickss, trunc(Int,time_array_var[id_of_bump]))
 xtickss=sort(xtickss)
 
 using Plots.PlotMeasures
-var_plot = plot(0:kesten_timestep:total_time, lw=2, fillalpha=0.2, mean(ihs), ribbon=std(ihs)/num_trials, label="Immature (Random walks)", color=:pink)
+var_plot = plot(0:kesten_timestep:total_time, mean(ihs), lw=2, fillalpha=0.2,  ribbon=std(ihs)/num_trials, label="Immature (Random walks)", color=:pink)
 plot!(0:kesten_timestep:total_time, mean(mhs), lw=2, ribbon=std(mhs)/num_trials, color=:skyblue1, label="Mature (Random walks)")
 plot!(0:kesten_timestep:total_time, mean(ihs)+mean(mhs), color=:palegreen, lw=2,ribbon=std(ihs+mhs)/num_trials, label="Combined (Random walks)")
 plot!(time_array_var, immature_population_var, lw=3, label = "Immature (Diff Eq)", legend=:bottomright, color=:red)
@@ -714,11 +736,11 @@ vspan!([16,26],fillalpha=0.1,label="Developmental period")
 vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=xtickss,legend=:outerright,size=(1000,500),bottommargin=5mm, leftmargin=5mm)
 # hline!([85.222],xlim=(35,50),ylim=(80,90))
 
-savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varplot.png")
+# savefig(var_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/varplot.png")
 
 # Histogram of final synapse size distribution
 # Diff Eq
-histogram(synapse_sizes_history_var[end],nbins=20)
+histogram(synapse_sizes_history_var[150],nbins=20)
 # Rand walks
 histogram(synapse_sizes_multiple[1],nbins=20)
 
@@ -727,6 +749,50 @@ histogram(synapse_sizes_multiple[1],nbins=20)
 # Plot elimination and creation rates
 plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
 plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate",ylim=(0,2.5))
+
+
+using KernelDensity
+synapse_sizes_history_var
+v1 = synapse_sizes_history_var[15]
+v2 = synapse_sizes_history_var[35]
+v3 = synapse_sizes_history_var[55]
+v4 = synapse_sizes_history_var[120]
+
+# Compute kernel density estimate
+kde_result1 = kde(v1)
+kde_result2 = kde(v2)
+kde_result3 = kde(v3)
+kde_result4 = kde(v4)
+
+color1 = RGB(176/255, 178/255, 240/255)
+color2 = RGB(78/255,84/255,182/255)
+color3 = RGBA(221/255, 221/255, 221/255, 255/255)
+color4 = RGB(4/255, 4/255, 4/255)
+
+# Plot the smooth density curve
+plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", color=color1)
+plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
+plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
+plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false, xlim=(-0.2,4))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
