@@ -403,9 +403,9 @@ function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 end
 
-total_pool_size = 1000
+total_pool_size = 100
 total_time = 120
-kesten_timestep = 0.2
+kesten_timestep = 0.01
 
 
 # a1 = 0.9
@@ -449,7 +449,7 @@ synapse_sizes_multiple = []
 syn_size_heatmaps_trials = []
 synapse_size_history_multiple = []
 
-num_trials = 10
+num_trials = 2
 
 for i in 1:num_trials
     ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -541,7 +541,7 @@ p6 = plot(timepoints,skewnessweights,xlabel="Postnatal Day",c=:black,grid=false,
 pp = plot(p1,p2,layout=(1,2),size=(1400,700), leftmargin=10mm,bottommargin=10mm,
 xlabelfontsize=18,ylabelfontsize=18,titlefontsize=20, xtickfontsize=18, ytickfontsize=18)
 
-savefig(p6,"C://Users/B00955735/OneDrive - Ulster University/Desktop/skew.png")
+# savefig(p6,"C://Users/B00955735/OneDrive - Ulster University/Desktop/skew.png")
 
 
 
@@ -612,8 +612,8 @@ for state_recs in state_recs_var_multiple
     developmental_period_16 = round(Int, (16/total_time)*size(state_recs,2))
     developmental_period_26 = round(Int, (26/total_time)*size(state_recs,2))
     
-    adult_period = round(Int, (70/total_time)*size(state_recs,2))
-    adult_period2 = round(Int, (88/total_time)*size(state_recs,2))
+    adult_period = round(Int, (100/total_time)*size(state_recs,2))
+    adult_period2 = round(Int, (118/total_time)*size(state_recs,2))
 
     developmental_survival_fraction1 = new_compute_survival_fraction007(state_recs[:,developmental_period_16:developmental_period_26])
     adulthood_survival_fraction1 = new_compute_survival_fraction007(state_recs[:,adult_period:adult_period2])
@@ -649,18 +649,18 @@ l2 = length(adulthoodperiodplot) - length(adult_survival_multiplee[1])
 
 
 # Plot survival fraction over time
-developmental_survival_plot = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiplee), ribbon=std(develop_survival_multiplee)/sqrt(num_trials), fillalpha=0.2, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
-    title="Synapse Survival Fraction (Early Development)", lw=2, legend=false, ylim=(0,1.05))
+developmental_survival_plot = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiplee),lw=5, ribbon=std(develop_survival_multiplee)/sqrt(num_trials), fillalpha=0.2, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
+    title="Synapse Survival Fraction (Early Development)", legend=false, ylim=(0,1.05))
     scatter!(16:1:26, development_points_to_match_data, label="Data",title="Survival Fraction (Early Development)", xlabel="Postnatal day")
 
 adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiplee), ribbon=std(adult_survival_multiplee)/sqrt(num_trials), fillalpha=0.2, xlabel="Days", ylabel="Survival Fraction",
-    title="Synapse Survival Fraction (Adulthood)", lw=2, legend=false, ylim=(0,1.05), xticks=0:1:18,label="Model")
+    title="Synapse Survival Fraction (Adulthood)", lw=5, legend=false, ylim=(0,1.05), xticks=0:1:18,label="Model")
     scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days", legend=:bottomleft)
 
-survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1))
+survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1),markersize=6, grid=false)
 
 
-# savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.svg")
+savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.svg")
 
 
 
@@ -680,7 +680,7 @@ plot!(grid=false,legendfontsize=12,ylim=(0,950))
 
 
 
-state_recs_var_multiple[1]
+
 
 ############
 ############
