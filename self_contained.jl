@@ -1,4 +1,4 @@
-using Random, StatsBase, DifferentialEquations, Distributions, Statistics, Plots
+using Random, StatsBase, DifferentialEquations, Distributions, Statistics, Plots, KernelDensity
 
 
 #0.9, 0.03333333333333333, 0.2, 3, 0.17500000000000002, 0.2, 0.05, 0.05, 3.
@@ -405,7 +405,7 @@ end
 
 total_pool_size = 1000
 total_time = 120
-kesten_timestep = 0.2
+kesten_timestep = 0.5
 
 
 # a1 = 0.9
@@ -420,7 +420,8 @@ b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
 a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 2.
-ε, η = .985, 1-ε
+ε = .985
+η = 1-ε
 σ_ε, σ_η = .1, .1
 
 
@@ -489,7 +490,52 @@ plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color
         legendfontsize=12, ylabel="Density")
 
 # savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot1.png")
-# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot1.svg")
+# savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/dist_plot.svg")
+
+timepoints = [15,25,35,45,55,90,120]
+synapticweightstime = [vcat([synapse_size_history_multiple[i][trunc(Int,tt/kesten_timestep)] for i in 1:num_trials]...) for tt in timepoints]
+
+A_new = [[] for i in 1:7]
+for i in 1:7
+    for j in 1:size(synapticweightstime[i],1)
+        if synapticweightstime[i][j] == 0.0
+            push!(A_new[i], 0.01)
+        else
+            push!(A_new[i], synapticweightstime[i][j])
+        end
+    end
+end
+
+A_new[1]
+for z in synapticweightstime
+    filter!(x -> x != 0, z)
+end 
+
+function geometric_std(X)
+    μg = geomean(X) #exp(mean(log.(X)))  # Geometric mean
+    return exp(sqrt(sum((log.(X) .- log(μg)) .^ 2) / length(X)))
+end
+
+function top_25_mean(X)
+    sorted_X = sort(X, rev=true)  # Sort in descending order
+    top_25 = sorted_X[1:ceil(Int, 0.25 * length(X))]  # Select top 25%
+    return mean(top_25)  # Compute mean
+end
+
+geommeanweights = geomean.(A_new)
+meanweights = mean.(A_new)
+geomstdweights = geometric_std.(A_new)
+stdweights = std.(A_new)
+top25meanweights = top_25_mean.(A_new)
+
+
+p1 = plot(timepoints,geommeanweights,xlabel="Postnatal Day",grid=false,c=:firebrick2,title="Geometric mean of synaptic weights across time", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p2 = plot(timepoints,geomstdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Geometric standard deviation of synaptic weights across time", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p3 = plot(timepoints,top25meanweights,c=:orange,title="Mean of top 25% of synaptic weights across time",grid=false,xlabel="Postnatal Day", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+
+p4 = plot(timepoints, meanweights,xlabel="Postnatal Day",grid=false,c=:firebrick2,title="Mean of synaptic weights across time", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p5 = plot(timepoints,stdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Standard deviation of synaptic weights across time", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+
 
 
 
@@ -612,8 +658,9 @@ id_max = argmax(smoothed_avg)
 
 p1 = plot(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trials), lw=5, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
 plot!(0:kesten_timestep:total_time, mean(ihs), ribbon=std(ihs)/sqrt(num_trials), lw=5, c=:magenta, label="Immature synapses")
+plot!(0:kesten_timestep:total_time, mean(ihs).+mean(mhs), ribbon=std(ihs)/sqrt(num_trials), lw=5, linealpha=0.7, c=:grey, label="Total synapses")
 plot!(title="Population Dynamics (Random Walks Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,legendfontsize=12,ylim=(0,600))
+plot!(grid=false,legendfontsize=12,ylim=(0,950))
 
 
 
@@ -708,8 +755,8 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
 end
 
 total_pool_size = 1000
-ε, η = .985, 1-ε
-σ_ε, σ_η = .1, .1
+# ε, η = .985, 1-ε
+# σ_ε, σ_η = .1, .1
 kesten_timestep = .2
 i=A
 paramss = (m, i, lambda)
@@ -743,8 +790,9 @@ vspan!([70,88], fillalpha=0.1,label="Adulthood period", xticks=xtickss,legend=:o
 
 p2 = plot(time_array_var, mature_population_var, lw=5, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
 plot!(time_array_var, immature_population_var, lw=5, c=:magenta, label="Immature synapses")
+plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:grey, linealpha=0.7,label="Total synapses")
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,ylim=(0,600),legendfontsize=12)
+plot!(grid=false,ylim=(0,950),legendfontsize=12)
 
 savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
 savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
