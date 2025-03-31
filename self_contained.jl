@@ -405,7 +405,7 @@ end
 
 total_pool_size = 100
 total_time = 120
-kesten_timestep = 0.01
+kesten_timestep = 0.1
 
 
 # a1 = 0.9
@@ -529,7 +529,7 @@ stdweights = std.(A_new)
 top25meanweights = top_25_mean.(A_new)
 skewnessweights = [skewness(Float64.(A_new[i])) for i in 1:7]
 
-p1 = plot(timepoints,geommeanweights,xlabel="Postnatal Day",grid=false,c=:firebrick2,ylim=(0,0.4),title="Geometric mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p1 = plot(timepoints,geommeanweights,xlabel="Postnatal Day",grid=false,c=:firebrick2,title="Geometric mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 p2 = plot(timepoints,geomstdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Geometric standard deviation", xticks=timepoints,ylim=(2,5.5),ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 p3 = plot(timepoints,top25meanweights,c=:lightslateblue,ylim=(0,2.1),title="Mean of top 25% of synaptic weights",grid=false,xlabel="Postnatal Day", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 
@@ -538,17 +538,12 @@ p5 = plot(timepoints,stdweights,xlabel="Postnatal Day",grid=false,c=:coral2,ylim
 
 p6 = plot(timepoints,skewnessweights,xlabel="Postnatal Day",c=:black,grid=false,ylim=(0,3),title="Skewness", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 
-pp = plot(p1,p2,layout=(1,2),size=(1400,700), leftmargin=10mm,bottommargin=10mm,
-xlabelfontsize=18,ylabelfontsize=18,titlefontsize=20, xtickfontsize=18, ytickfontsize=18)
+# pp = plot(p1,p2,layout=(1,2),size=(1400,700), leftmargin=10mm,bottommargin=10mm,
+# xlabelfontsize=18,ylabelfontsize=18,titlefontsize=20, xtickfontsize=18, ytickfontsize=18)
 
 # savefig(p6,"C://Users/B00955735/OneDrive - Ulster University/Desktop/skew.png")
 
 
-
-
-
-v1
-Float64.(A_new[1])
 
 
 
@@ -660,7 +655,7 @@ adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_mu
 survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1),markersize=6, grid=false)
 
 
-savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.svg")
+# savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.svg")
 
 
 
