@@ -72,6 +72,8 @@ h0 = heatmap(correlation_matrix,
     ylabel = "Outputs",
     title = "Parameter-Output Correlations",
     colorbar_title = "Correlation (r)",
-    c=:bam, size=(700,500), 
+    c=:bam, size=(700,500), clim=(-0.4,0.4)
 )
 
+
+plot(h0, rs1h, p1, layout=(1,3), size=(2500,600), margin=10mm)

@@ -133,7 +133,7 @@ plot(h0,p1,size=(1500,600))
 
 # Standard regression GSA
 bounds = [[0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10]]
-reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 200)
+reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
 
 rs1 = reg_sens.standard_regression
 cc = maximum(abs.(rs1))
@@ -150,3 +150,19 @@ rs1h = heatmap(rs1,
 plot(h0,p1,rs1h,layout=(1,3),size=(2500,600))
 
 
+rs2 = reg_sens.pearson
+cc2 = maximum(abs.(rs2))
+rs2h = heatmap(rs1,
+    xticks = (xpoints, xlabs),
+    yticks = (1:5, ylabs),
+    xlabel = "Parameters",
+    ylabel = "Outputs",
+    title = "Sensitivity Analysis - Pearson",
+    colorbar_title = "Correlation",
+    c=:bam, size=(700,500), clim=(-cc2,cc2)
+)
+
+
+pp = plot(rs2h, p1, layout=(1,2), size=(1700,600), margin=10mm)
+
+savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")
