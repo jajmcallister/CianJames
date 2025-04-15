@@ -74,11 +74,10 @@ for i in 1:7
 end
 
 # Set up Sobol analysis with parallel processing
-println("Running parallelized Sobol sensitivity analysis with $(nprocs()-1) worker processes...")
 sampler = SobolSample()
 
 # You can reduce this for faster results if needed
-n_samples = 100  # Reduced from 1000 to 500 for faster computation
+n_samples = 500  # Reduced from 1000 to 500 for faster computation
 
 # Generate design matrices
 A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
@@ -106,6 +105,7 @@ p1 = heatmap(ss1,
     xticks = (xpoints, xlabs),
     yticks = (1:5, ylabs),
     xlabel = "Parameters",
+    ylabel="Outputs",
     colorbar_title="Sensitivity Index",
     c=:viridis,
     clim=(0, max(maximum(ss1), 0.01)),  # Set colorbar limits with minimum of 0.01 to avoid issues with all zeros
@@ -163,6 +163,6 @@ rs2h = heatmap(rs1,
 )
 
 
-pp = plot(rs2h, p1, layout=(1,2), size=(1700,600), margin=10mm)
+pp = plot(rs2h, p1, layout=(2,1), size=(800,1000), margin=10mm)
 
-savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")
+# savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")
