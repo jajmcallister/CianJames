@@ -159,10 +159,11 @@ rs2h = heatmap(rs1,
     ylabel = "Outputs",
     title = "Sensitivity Analysis - Pearson",
     colorbar_title = "Correlation",
-    c=:bam, size=(700,500), clim=(-cc2,cc2)
+    c=:bam, size=(700,500), clim=(-cc2,cc2),
+    fontfamily="Computer Modern",
 )
 
 
-pp = plot(rs2h, p1, layout=(2,1), size=(800,1000), margin=10mm)
+pp = plot(rs2h, p1, layout=(2,1), size=(800,1000), leftmargin=10mm)
 
 # savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")

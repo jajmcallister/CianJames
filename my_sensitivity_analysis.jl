@@ -76,4 +76,4 @@ h0 = heatmap(correlation_matrix,
 )
 
 
-plot(h0, rs1h, p1, layout=(1,3), size=(2500,600), margin=10mm)
+plot(rs1h, p1, layout=(1,3), size=(2500,600), margin=10mm)

@@ -5,7 +5,7 @@
 # Ordered parameters and baseline values
 param_keys = [:a1, :k1, :a2, :k2, :m, :A, :λ]
 baseline_params = [a1, k1, a2, k2, m, A, lambda]
-deltas = 0.9 .* baseline_params
+deltas = 0.05 .* baseline_params
 
 deltas
 
@@ -43,8 +43,8 @@ sensitivity_matrix = zeros(n_outputs, n_params)
         normalized_outputs = outputs ./ abs.(base_outputs)
         Δoutput = normalized_outputs .- normalized_base_outputs
         for j in 1:n_outputs
-            sensitivity_matrix[j, i] += (outputs[j] - base_outputs[j]) / (2 * delta)
-            # sensitivity_matrix[j, i] += Δoutput[j] #/ (2 * delta)
+            # sensitivity_matrix[j, i] += (outputs[j] - base_outputs[j]) / (2 * delta)
+            sensitivity_matrix[j, i] += Δoutput[j] #/ (2 * delta)
         end
     end
 end
@@ -57,29 +57,24 @@ h1 = heatmap(sensitivity_matrix,
     xlabel = "Parameters",
     ylabel = "Outputs",
     title="One-at-a-time Sensitivity", colorbar_title="∂Output / ∂Param",
-    c=:bam,size=(700, 500),clim=(-100,100)
+    c=:bam,size=(700, 500),clim=(-1,1) .* maximum(abs.(sensitivity_matrix)),
+    fontfamily="Computer Modern",
 )
+
+# Add values on the heatmap
+for i in 1:size(sensitivity_matrix, 1)
+    for j in 1:size(sensitivity_matrix, 2)
+        annotate!(j, i, text(round(sensitivity_matrix[i, j], digits=2), 8, :white))
+    end
+end
+
+
+plot!()
+
+
 
 
 plot(h0,h1,layout=(1,2), size=(1500,600),margin=10mm)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
