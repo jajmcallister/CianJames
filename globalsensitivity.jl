@@ -69,7 +69,7 @@ param_means = [a1, k1, a2, k2, m, A, λ]
 deltas = 1.0 .* param_means
 
 for i in 1:7
-    param_bounds[i, 1] = max(0.001, param_means[i] - deltas[i])
+    param_bounds[i, 1] = max(0.0001, param_means[i] - deltas[i])
     param_bounds[i, 2] = param_means[i] + deltas[i]
 end
 
@@ -99,6 +99,7 @@ output_names = [
     "Final mature"
 ]
 
+using Plots.PlotMeasures
 # Create heatmap for first-order indices
 p1 = heatmap(ss1,
     title="First-Order Sobol Indices",
@@ -106,11 +107,13 @@ p1 = heatmap(ss1,
     yticks = (1:5, ylabs),
     xlabel = "Parameters",
     ylabel="Outputs",
-    colorbar_title="Sensitivity Index",
+    colorbar_title="\n First-Order Sensitivity Index",
     c=:viridis,
     clim=(0, max(maximum(ss1), 0.01)),  # Set colorbar limits with minimum of 0.01 to avoid issues with all zeros
-    size=(600, 400)
+    size=(800, 600),rightmargin=5mm
 )
+
+# savefig(p1, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sobol_indices.png")
 
 # Create heatmap for total-order indices
 p2 = heatmap(sst,
@@ -142,12 +145,13 @@ rs1h = heatmap(rs1,
     yticks = (1:5, ylabs),
     xlabel = "Parameters",
     ylabel = "Outputs",
-    title = "Sensitivity Analysis - Standard Regression",
-    colorbar_title = "",
-    c=:bam, size=(700,500), clim=(-cc,cc)
+    title = "Regression Global Sensitivity Analysis",
+    colorbar_title = "\n Standardised Regression Coefficient",rightmargin=5mm,
+    c=:bam, size=(800,600), clim=(-cc,cc)
 )
+# savefig(rs1h, "C://Users/B00955735/OneDrive - Ulster University/Desktop/regression_sensitivity.png")
 
-plot(h0,p1,rs1h,layout=(1,3),size=(2500,600))
+plot(rs1h,rs2h, layout=(1,2),size=(2000,600))
 
 
 rs2 = reg_sens.pearson
