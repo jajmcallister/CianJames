@@ -85,7 +85,9 @@ A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], pa
 # Run the analysis with parallel=true
 sobol_result = gsa(model_func, Sobol(), A, B, batch=false, parallel=true)
 
-# The rest of your code for visualization remains the same
+ylabs = ["Time when immature \n population reaches max", "Time when mature \n population reaches max", "Time when combined \n population reaches max", "Final immature \n population value", "Final mature \n population value"]
+xlabs = ["\n a1", "Creation", "\n k1", "\n a2","Elimination", "\n k2", "Maturation \n m", "\n A", "De-maturation", "\n λ"]
+xpoints = [1,1.5,2,3,3.5,4,5,6,6.5,7]
 
 ss1 = sobol_result.S1
 sst = sobol_result.ST
@@ -132,10 +134,12 @@ p1 = heatmap(ss1,
 
 
 ##################
+k1
 
 
 # Standard regression GSA
-bounds = [[0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10]]
+#           a1       k1      a2          k2     m       A          λ
+bounds = [[0, 10], [0, 1], [0, 10], [0, 1], [0, 10], [0, 10], [0, 10]]
 reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 100)
 
 rs1 = reg_sens.standard_regression
