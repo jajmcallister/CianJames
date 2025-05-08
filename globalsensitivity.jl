@@ -66,10 +66,10 @@ end
 # Parameter bounds for sensitivity analysis
 param_bounds = Matrix{Float64}(undef, 7, 2)
 param_means = [a1, k1, a2, k2, m, A, λ]
-deltas = 1.0 .* param_means
+deltas = 10.0 .* param_means
 
 for i in 1:7
-    param_bounds[i, 1] = max(0.0001, param_means[i] - deltas[i])
+    param_bounds[i, 1] = max(0.000001, param_means[i] - deltas[i])
     param_bounds[i, 2] = param_means[i] + deltas[i]
 end
 
@@ -77,7 +77,7 @@ end
 sampler = SobolSample()
 
 # You can reduce this for faster results if needed
-n_samples = 500  # Reduced from 1000 to 500 for faster computation
+n_samples = 100
 
 # Generate design matrices
 A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
@@ -116,19 +116,19 @@ p1 = heatmap(ss1,
 # savefig(p1, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sobol_indices.png")
 
 # Create heatmap for total-order indices
-p2 = heatmap(sst,
-    xticks=(1:7, param_names),
-    yticks=(1:5, output_names),
-    title="Total-Order Sobol Indices",
-    xlabel="Parameters",
-    ylabel="Outputs",
-    colorbar_title="Sensitivity Index",
-    c=:viridis,
-    clim=(0, max(maximum(sst), 0.01)),
-    size=(600, 400)
-)
+# p2 = heatmap(sst,
+#     xticks=(1:7, param_names),
+#     yticks=(1:5, output_names),
+#     title="Total-Order Sobol Indices",
+#     xlabel="Parameters",
+#     ylabel="Outputs",
+#     colorbar_title="Sensitivity Index",
+#     c=:viridis,
+#     clim=(0, max(maximum(sst), 0.01)),
+#     size=(600, 400)
+# )
 
-plot(h0,p1,size=(1500,600))
+# plot(h0,p1,size=(1500,600))
 
 
 ##################
@@ -136,7 +136,7 @@ plot(h0,p1,size=(1500,600))
 
 # Standard regression GSA
 bounds = [[0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10]]
-reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
+reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 100)
 
 rs1 = reg_sens.standard_regression
 cc = maximum(abs.(rs1))
@@ -151,23 +151,23 @@ rs1h = heatmap(rs1,
 )
 # savefig(rs1h, "C://Users/B00955735/OneDrive - Ulster University/Desktop/regression_sensitivity.png")
 
-plot(rs1h,rs2h, layout=(1,2),size=(2000,600))
+# plot(rs1h,rs2h, layout=(1,2),size=(2000,600))
 
 
-rs2 = reg_sens.pearson
-cc2 = maximum(abs.(rs2))
-rs2h = heatmap(rs1,
-    xticks = (xpoints, xlabs),
-    yticks = (1:5, ylabs),
-    xlabel = "Parameters",
-    ylabel = "Outputs",
-    title = "Sensitivity Analysis - Pearson",
-    colorbar_title = "Correlation",
-    c=:bam, size=(700,500), clim=(-cc2,cc2),
-    fontfamily="Computer Modern",
-)
+# rs2 = reg_sens.pearson
+# cc2 = maximum(abs.(rs2))
+# rs2h = heatmap(rs1,
+#     xticks = (xpoints, xlabs),
+#     yticks = (1:5, ylabs),
+#     xlabel = "Parameters",
+#     ylabel = "Outputs",
+#     title = "Sensitivity Analysis - Pearson",
+#     colorbar_title = "Correlation",
+#     c=:bam, size=(700,500), clim=(-cc2,cc2),
+#     fontfamily="Computer Modern",
+# )
 
 
-pp = plot(rs2h, p1, layout=(2,1), size=(800,1000), leftmargin=10mm)
+pp = plot(rs1h, p1, layout=(2,1), size=(800,1000), leftmargin=10mm)
 
 # savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")
