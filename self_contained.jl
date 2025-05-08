@@ -745,11 +745,24 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
         
         if N_M > length(synapse_sizes) # If synapses have been added to the mature population since last time
             new_matures = round(Int, N_M) - length(synapse_sizes);
-            append!(synapse_sizes, fill(0.01, new_matures));  # Initialize new mature synapses with size 0.0
-        elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
-            num_delete_matures = length(synapse_sizes) - round(Int, N_M); #find how many need to be deleted
-            synapse_sizes = sort(synapse_sizes); # sort the synapse size array
-            synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
+            append!(synapse_sizes, fill(0.01, new_matures));  # Initialize new mature synapses with size 0.01
+        # elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
+        #     num_delete_matures = length(synapse_sizes) - round(Int, N_M); #find how many need to be deleted
+        #     synapse_sizes = sort(synapse_sizes); # sort the synapse size array
+        #     synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
+        # end
+
+        elseif N_M < length(synapse_sizes)
+            num_delete_matures = length(synapse_sizes) - round(Int, N_M) #find how many need to be deleted
+            sizes = synapse_sizes
+            weights = exp.(-sizes ./ λ)
+            weights ./= sum(weights)  # Normalise to sum to 1
+        
+            # Sample indices to delete based on weights, without replacement
+            delete_indices = sample(1:length(sizes), Weights(weights), num_delete_matures; replace=false)
+        
+            # Remove selected synapses from the synapse_sizes array before applying Kesten process
+            synapse_sizes = deleteat!(synapse_sizes, sort(delete_indices; rev=true))
         end
 
         # Apply Kesten process to mature synapses in N_M
@@ -764,7 +777,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-total_pool_size = 1000
+total_pool_size = 100
 # ε, η = .985, 1-ε
 # σ_ε, σ_η = .1, .1
 kesten_timestep = .2
@@ -804,10 +817,10 @@ plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:g
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
 plot!(grid=false,ylim=(0,950),legendfontsize=12)
 
-savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
-savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
-savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
-savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.svg")
+# savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
+# savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
+# savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
+# savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.svg")
 
 # Plot elimination and creation rates
 plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
