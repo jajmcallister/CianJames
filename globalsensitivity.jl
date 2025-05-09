@@ -14,13 +14,13 @@ end
 # Make sure all workers have the necessary functions and parameters
 @everywhere begin
     # Parameters
-    a1, k1, a2, k2, m, A, λ = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 2.0
+    A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
     ε, η = 0.985, 1 - 0.985
     σ_ε, σ_η = 0.1, 0.1
     
     # Constants required for the model
-    b1 = 0.1
-    b2 = 0.1
+    b1 = 0.2
+    b2 = 0.2
     total_time = 100.0
     total_pool_size = 100
     kesten_timestep = 0.1
@@ -28,17 +28,17 @@ end
     
     # Model function that will be evaluated in parallel
     function model_func(p)
-        a1, k1, a2, k2, m, A, λ = p
+        A1,lambda1,A2,lambda2,m,A3,lambda3 = p
         
         # Define creation and elimination functions
-        creation_func(t) = a1 * exp(-t * k1) + b1
-        elimination_func(t) = a2 * exp(-t * k2) + b2
+        creation_func(t) = A1 * exp(-t / lambda1) + b1
+        elimination_func(t) = A2 * exp(-t / lambda2) + b2
     
         # Calculate rates over time
         elim = elimination_func.(0:kesten_timestep:total_time)
         creat = creation_func.(0:kesten_timestep:total_time)
     
-        rates_var = creat, m, elim, A, λ
+        rates_var = creat, m, elim, A3, lambda3
         
         # Run multiple simulations and average the results
         ihs, mhs = [], []
@@ -65,7 +65,7 @@ end
 
 # Parameter bounds for sensitivity analysis
 param_bounds = Matrix{Float64}(undef, 7, 2)
-param_means = [a1, k1, a2, k2, m, A, λ]
+param_means = [A1, lambda1, A2, lambda2, m, A3, lambda3]
 deltas = 10.0 .* param_means
 
 for i in 1:7
@@ -76,8 +76,8 @@ end
 # Set up Sobol analysis with parallel processing
 sampler = SobolSample()
 
-# You can reduce this for faster results if needed
-n_samples = 100
+
+n_samples = 10
 
 # Generate design matrices
 A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
@@ -86,13 +86,13 @@ A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], pa
 sobol_result = gsa(model_func, Sobol(), A, B, batch=false, parallel=true)
 
 ylabs = ["Time when immature \n population reaches max", "Time when mature \n population reaches max", "Time when combined \n population reaches max", "Final immature \n population value", "Final mature \n population value"]
-xlabs = ["\n a1", "Creation", "\n k1", "\n a2","Elimination", "\n k2", "Maturation \n m", "\n A", "De-maturation", "\n λ"]
+xlabs = ["\n A1", "Creation", "\n λ1", "\n A2","Elimination", "\n λ2", "Maturation \n m", "\n A3", "De-maturation", "\n λ3"]
 xpoints = [1,1.5,2,3,3.5,4,5,6,6.5,7]
 
 ss1 = sobol_result.S1
 sst = sobol_result.ST
 # Parameter and output names for plotting
-param_names = ["a1", "k1", "a2", "k2", "m", "A", "λ"]
+param_names = ["A1", "λ1", "A2", "λ2", "m", "A3", "λ3"]
 output_names = [
     "Time to max immature", 
     "Time to max mature", 
@@ -134,12 +134,11 @@ p1 = heatmap(ss1,
 
 
 ##################
-k1
 
 
 # Standard regression GSA
-#           a1       k1      a2          k2     m       A          λ
-bounds = [[0, 10], [0, 1], [0, 10], [0, 1], [0, 10], [0, 10], [0, 10]]
+#           A1      lambda1   A2   lambda2     m       A3        lambda3
+bounds = [[0, 10], [0, 50], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10]]
 reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 100)
 
 rs1 = reg_sens.standard_regression

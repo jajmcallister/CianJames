@@ -236,172 +236,172 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap, synapse_size_history
 end
 
-function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, rates, εs, ηs, σ_εs, σ_ηs, kesten_time_step)
-    pool = total_pool_size
-    steps = trunc(Int, total_time / kesten_time_step)
-    immature = 0
-    mature = 0
-    pool_history = []
-    immature_history = []
-    mature_history = []
+# function track_times_variable_rates_and_kesten_007(total_time, total_pool_size, rates, εs, ηs, σ_εs, σ_ηs, kesten_time_step)
+#     pool = total_pool_size
+#     steps = trunc(Int, total_time / kesten_time_step)
+#     immature = 0
+#     mature = 0
+#     pool_history = []
+#     immature_history = []
+#     mature_history = []
 
-    state_records = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
-    state_records_heatmap = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+#     state_records = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+#     state_records_heatmap = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
 
-    I_pop = []
-    M_pop = []
-    pool_pop = [i for i in 1:total_pool_size]
-    cr, m, el, A, lambda  = rates
+#     I_pop = []
+#     M_pop = []
+#     pool_pop = [i for i in 1:total_pool_size]
+#     cr, m, el, A, lambda  = rates
 
-    push!(pool_history, pool)
-    push!(immature_history, immature)
-    push!(mature_history, mature)
+#     push!(pool_history, pool)
+#     push!(immature_history, immature)
+#     push!(mature_history, mature)
     
-    # Synapse sizes for mature population
-    synapse_sizes = Float64[]
-    synapse_size_history = []
+#     # Synapse sizes for mature population
+#     synapse_sizes = Float64[]
+#     synapse_size_history = []
     
     
-    # Simulation
-    for t in 1:steps
-        # 1 Transitions from pool to immature
-        pool_to_immature = 0
-        transition_prob1 = cr[t] * kesten_timestep
-        for i in 1:pool
-            if rand() < transition_prob1
-                pool_to_immature += 1
-            end
-        end
-        pool -= pool_to_immature
-        immature += pool_to_immature
+#     # Simulation
+#     for t in 1:steps
+#         # 1 Transitions from pool to immature
+#         pool_to_immature = 0
+#         transition_prob1 = cr[t] * kesten_timestep
+#         for i in 1:pool
+#             if rand() < transition_prob1
+#                 pool_to_immature += 1
+#             end
+#         end
+#         pool -= pool_to_immature
+#         immature += pool_to_immature
     
-        # 2 Transitions from immature to mature
-        immature_to_mature = 0
-        transition_prob2 = m * kesten_timestep  # Probability for each immature synapse to become mature
+#         # 2 Transitions from immature to mature
+#         immature_to_mature = 0
+#         transition_prob2 = m * kesten_timestep  # Probability for each immature synapse to become mature
 
-        for i in 1:immature
-            if rand() < transition_prob2
-                immature_to_mature += 1
-            end
-        end
+#         for i in 1:immature
+#             if rand() < transition_prob2
+#                 immature_to_mature += 1
+#             end
+#         end
 
-        # Update the counts
-        immature -= immature_to_mature
-        mature += immature_to_mature
+#         # Update the counts
+#         immature -= immature_to_mature
+#         mature += immature_to_mature
     
-        # Initialize new mature synapse sizes
-        for i in 1:immature_to_mature
-            push!(synapse_sizes, 0.0)  # Initial size of a new mature synapse
-        end
+#         # Initialize new mature synapse sizes
+#         for i in 1:immature_to_mature
+#             push!(synapse_sizes, 0.0)  # Initial size of a new mature synapse
+#         end
     
-        synapse_sizes = sort(synapse_sizes, rev=true)
+#         synapse_sizes = sort(synapse_sizes, rev=true)
     
-        # 3 Transitions from mature to immature
-        mature_to_immature_indices = []
-        for (id, size) in enumerate(synapse_sizes)
-            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
-            if rand() < prob
-                push!(mature_to_immature_indices, id)
-            end
-        end
+#         # 3 Transitions from mature to immature
+#         mature_to_immature_indices = []
+#         for (id, size) in enumerate(synapse_sizes)
+#             prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
+#             if rand() < prob
+#                 push!(mature_to_immature_indices, id)
+#             end
+#         end
 
         
     
-        # Update states based on calculated probabilities
-        mature_to_immature = length(mature_to_immature_indices)
-        mature_to_immature = round(Int, mature_to_immature)
-        mature -= mature_to_immature
-        immature += mature_to_immature
+#         # Update states based on calculated probabilities
+#         mature_to_immature = length(mature_to_immature_indices)
+#         mature_to_immature = round(Int, mature_to_immature)
+#         mature -= mature_to_immature
+#         immature += mature_to_immature
     
-        # Remove synapse sizes for synapses that became immature
-        # Sort indices in reverse order
-        sorted_indices = sort(mature_to_immature_indices, rev=true)
+#         # Remove synapse sizes for synapses that became immature
+#         # Sort indices in reverse order
+#         sorted_indices = sort(mature_to_immature_indices, rev=true)
     
-        # Delete elements at the specified indices
-        for idx in sorted_indices
-            deleteat!(synapse_sizes, idx)
-        end
+#         # Delete elements at the specified indices
+#         for idx in sorted_indices
+#             deleteat!(synapse_sizes, idx)
+#         end
     
-        # 4 Transitions from immature to pool
-        immature_to_pool = 0
-        transition_prob3 = el[t] * kesten_timestep  # Probability for each immature synapse to transition to the pool
+#         # 4 Transitions from immature to pool
+#         immature_to_pool = 0
+#         transition_prob3 = el[t] * kesten_timestep  # Probability for each immature synapse to transition to the pool
 
-        for i in 1:immature
-            if rand() < transition_prob3
-                immature_to_pool += 1
-            end
-        end
+#         for i in 1:immature
+#             if rand() < transition_prob3
+#                 immature_to_pool += 1
+#             end
+#         end
 
-        # Update the counts
-        immature -= immature_to_pool
-        pool += immature_to_pool
+#         # Update the counts
+#         immature -= immature_to_pool
+#         pool += immature_to_pool
 
         
-        push!(pool_history, pool)
-        push!(immature_history, immature)
-        push!(mature_history, mature)
+#         push!(pool_history, pool)
+#         push!(immature_history, immature)
+#         push!(mature_history, mature)
 
 
-        # 1. Pool to immature
-        pool_to_immature_count = abs(trunc(Int, pool_to_immature))
-        pool_to_immature_indxs = safe_sample007(pool_pop, pool_to_immature_count, replace=false)
-        filter!(x -> !in(x, pool_to_immature_indxs), pool_pop)
-        append!(I_pop, pool_to_immature_indxs)
+#         # 1. Pool to immature
+#         pool_to_immature_count = abs(trunc(Int, pool_to_immature))
+#         pool_to_immature_indxs = safe_sample007(pool_pop, pool_to_immature_count, replace=false)
+#         filter!(x -> !in(x, pool_to_immature_indxs), pool_pop)
+#         append!(I_pop, pool_to_immature_indxs)
         
-        # 2. Immature to mature
-        immature_to_mature_count = trunc(Int, immature_to_mature)
-        immature_to_mature_indxs = safe_sample007(I_pop, immature_to_mature_count, replace=false)
-        filter!(x -> !in(x, immature_to_mature_indxs), I_pop)
-        append!(M_pop, immature_to_mature_indxs)
+#         # 2. Immature to mature
+#         immature_to_mature_count = trunc(Int, immature_to_mature)
+#         immature_to_mature_indxs = safe_sample007(I_pop, immature_to_mature_count, replace=false)
+#         filter!(x -> !in(x, immature_to_mature_indxs), I_pop)
+#         append!(M_pop, immature_to_mature_indxs)
         
-        # 3. Mature to immature
-        mature_to_immature_count = abs(trunc(Int, mature_to_immature))
-        mature_to_immature_indxs = safe_sample007(M_pop, mature_to_immature_count, replace=false)
-        filter!(x -> !in(x, mature_to_immature_indxs), M_pop)
-        append!(I_pop, mature_to_immature_indxs)
+#         # 3. Mature to immature
+#         mature_to_immature_count = abs(trunc(Int, mature_to_immature))
+#         mature_to_immature_indxs = safe_sample007(M_pop, mature_to_immature_count, replace=false)
+#         filter!(x -> !in(x, mature_to_immature_indxs), M_pop)
+#         append!(I_pop, mature_to_immature_indxs)
         
-        # 4. Immature to pool
-        immature_to_pool_count = trunc(Int, immature_to_pool)
-        immature_to_pool_indxs = safe_sample007(I_pop, immature_to_pool_count, replace=false)
-        filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
-        append!(pool_pop, immature_to_pool_indxs)
+#         # 4. Immature to pool
+#         immature_to_pool_count = trunc(Int, immature_to_pool)
+#         immature_to_pool_indxs = safe_sample007(I_pop, immature_to_pool_count, replace=false)
+#         filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
+#         append!(pool_pop, immature_to_pool_indxs)
         
-        ε, η, σ_ε, σ_η = εs[t], ηs[t], σ_εs[t], σ_ηs[t]
+#         ε, η, σ_ε, σ_η = εs[t], ηs[t], σ_εs[t], σ_ηs[t]
 
-        synapse_sizes = kesten_update_new007(synapse_sizes, ε, η, σ_ε, σ_η)
+#         synapse_sizes = kesten_update_new007(synapse_sizes, ε, η, σ_ε, σ_η)
     
 
-        push!(synapse_size_history, synapse_sizes)
+#         push!(synapse_size_history, synapse_sizes)
 
-        # Now recording the current state of the synapses in the state record matrix
-        for j in 1:total_pool_size
-            if j in pool_pop
-                state_records[j,t] = 0
-            elseif j in I_pop
-                state_records[j,t] = 1
-            elseif j in M_pop
-                state_records[j,t] = 2
-            end
-        end
+#         # Now recording the current state of the synapses in the state record matrix
+#         for j in 1:total_pool_size
+#             if j in pool_pop
+#                 state_records[j,t] = 0
+#             elseif j in I_pop
+#                 state_records[j,t] = 1
+#             elseif j in M_pop
+#                 state_records[j,t] = 2
+#             end
+#         end
 
-        # Record the current state in the state_records_heatmap matrix
-        for j in 1:total_pool_size
-            if j in pool_pop
-                state_records_heatmap[j, t] = 0 # in the pool, size = 0
-            elseif j in I_pop
-                state_records_heatmap[j, t] = 0  # in immature population size is 0
-            elseif j in M_pop
-                idx = findfirst(==(j), M_pop)
-                if idx !== nothing
-                    state_records_heatmap[j, t] = synapse_sizes[idx]
-                end
-            end
-        end
+#         # Record the current state in the state_records_heatmap matrix
+#         for j in 1:total_pool_size
+#             if j in pool_pop
+#                 state_records_heatmap[j, t] = 0 # in the pool, size = 0
+#             elseif j in I_pop
+#                 state_records_heatmap[j, t] = 0  # in immature population size is 0
+#             elseif j in M_pop
+#                 idx = findfirst(==(j), M_pop)
+#                 if idx !== nothing
+#                     state_records_heatmap[j, t] = synapse_sizes[idx]
+#                 end
+#             end
+#         end
     
-    end
+#     end
 
-    return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
-end
+#     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
+# end
 
 total_pool_size = 100
 total_time = 120
@@ -419,15 +419,14 @@ b1 = 0.2
 b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
-a1,k1,a2,k2,m,A,lambda = 0.9, 0.03333333333333333, 2, 0.17500000000000002, 0.05, 0.05, 2.
+A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
 ε = .985
 η = 1-ε
 σ_ε, σ_η = .1, .1
 
 
-
-creation_func(t) = a1 * exp(-t * k1) + b1
-elimination_func(t) = a2 * exp(-t * k2) + b2
+creation_func(t) = A1 * exp(-t / lambda1) + b1
+elimination_func(t) = A2 * exp(-t / lambda2) + b2
 
 elim = elimination_func.(0:kesten_timestep:total_time)
 creat = creation_func.(0:kesten_timestep:total_time)
@@ -439,7 +438,7 @@ plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel
 # creat = sigmoid_creation.(0:kesten_timestep:total_time)
 
 
-rates_var = creat, m, elim, A, lambda
+rates_var = creat, m, elim, A3, lambda3
 
 
 state_recs_var_multiple = []
@@ -472,10 +471,10 @@ v3 = vcat([synapse_size_history_multiple[i][trunc(Int,55/kesten_timestep)] for i
 v4 = vcat([synapse_size_history_multiple[i][trunc(Int,120/kesten_timestep)] for i in 1:num_trials]...) 
 
 # Compute kernel density estimate
-kde_result1 = kde(v1,bandwidth=0.1)
-kde_result2 = kde(v2,bandwidth=0.1)
-kde_result3 = kde(v3,bandwidth=0.1)
-kde_result4 = kde(v4,bandwidth=0.1)
+kde_result1 = kde(v1,bandwidth=0.5)
+kde_result2 = kde(v2,bandwidth=0.5)
+kde_result3 = kde(v3,bandwidth=0.5)
+kde_result4 = kde(v4,bandwidth=0.5)
 
 color1 = RGB(176/255, 178/255, 240/255)
 color2 = RGB(78/255,84/255,182/255)
@@ -530,8 +529,8 @@ top25meanweights = top_25_mean.(A_new)
 skewnessweights = [skewness(Float64.(A_new[i])) for i in 1:7]
 
 p1 = plot(timepoints,geommeanweights,xlabel="Postnatal Day",grid=false,c=:firebrick2,title="Geometric mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
-p2 = plot(timepoints,geomstdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Geometric standard deviation", xticks=timepoints,ylim=(2,5.5),ylabel="Synaptic weight (a.u.)",label=false,lw=5)
-p3 = plot(timepoints,top25meanweights,c=:lightslateblue,ylim=(0,2.1),title="Mean of top 25% of synaptic weights",grid=false,xlabel="Postnatal Day", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p2 = plot(timepoints,geomstdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Geometric standard deviation", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p3 = plot(timepoints,top25meanweights,c=:lightslateblue,title="Mean of top 25% of synaptic weights",grid=false,xlabel="Postnatal Day", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 
 p4 = plot(timepoints, meanweights,xlabel="Postnatal Day",grid=false,ylim=(0,1),c=:firebrick2,title="Arithmetic mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 p5 = plot(timepoints,stdweights,xlabel="Postnatal Day",grid=false,c=:coral2,ylim=(0,1),title="Arithmetic standard deviation", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
@@ -584,7 +583,7 @@ hists = heatmap(
     xlabel = "Time",
     ylabel = "Synapse Size",
     colorbar_title = "Count",
-    title = "Histograms of synapse size across time", clims=(0,10)
+    title = "Histograms of synapse size across time", clims=(0,2)
 )
 
 
@@ -670,7 +669,7 @@ p1 = plot(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trial
 plot!(0:kesten_timestep:total_time, mean(ihs), ribbon=std(ihs)/sqrt(num_trials), lw=5, c=:magenta, label="Immature synapses")
 plot!(0:kesten_timestep:total_time, mean(ihs).+mean(mhs), ribbon=std(ihs)/sqrt(num_trials), lw=5, linealpha=0.7, c=:grey, label="Total synapses")
 plot!(title="Population Dynamics (Random Walks Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,legendfontsize=12,ylim=(0,950))
+plot!(grid=false,legendfontsize=12,ylim=(0,total_pool_size))
 
 
 
@@ -782,7 +781,7 @@ total_pool_size = 100
 # σ_ε, σ_η = .1, .1
 kesten_timestep = .2
 i=A
-paramss = (m, i, lambda)
+paramss = (m, i, lambda3)
 
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
 
@@ -815,7 +814,7 @@ p2 = plot(time_array_var, mature_population_var, lw=5, c=:green, label="Mature s
 plot!(time_array_var, immature_population_var, lw=5, c=:magenta, label="Immature synapses")
 plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:grey, linealpha=0.7,label="Total synapses")
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,ylim=(0,950),legendfontsize=12)
+plot!(grid=false,ylim=(0,total_pool_size),legendfontsize=12)
 
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
 # savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
@@ -835,10 +834,10 @@ v3 = synapse_sizes_history_var[55]
 v4 = synapse_sizes_history_var[120]
 
 # Compute kernel density estimate
-kde_result1 = kde(v1)
-kde_result2 = kde(v2)
-kde_result3 = kde(v3)
-kde_result4 = kde(v4)
+kde_result1 = kde(v1,bandwidth=0.3)
+kde_result2 = kde(v2,bandwidth=0.3)
+kde_result3 = kde(v3,bandwidth=0.3)
+kde_result4 = kde(v4,bandwidth=0.3)
 
 color1 = RGB(176/255, 178/255, 240/255)
 color2 = RGB(78/255,84/255,182/255)
