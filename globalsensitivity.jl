@@ -4,8 +4,6 @@ using QuasiMonteCarlo
 using Statistics
 using Plots
 
-# Add worker processes if not already added
-# This will use all available cores on your machine
 if nprocs() == 1
     addprocs(Sys.CPU_THREADS - 1)
     @everywhere using GlobalSensitivity, Statistics, Distributions
@@ -21,7 +19,7 @@ end
     # Constants required for the model
     b1 = 0.2
     b2 = 0.2
-    total_time = 100.0
+    total_time = 120.0
     total_pool_size = 100
     kesten_timestep = 0.1
 
@@ -73,11 +71,20 @@ for i in 1:7
     param_bounds[i, 2] = param_means[i] + deltas[i]
 end
 
+for i in 1:7
+    for j in 1:2
+        param_bounds[i,j]=bounds[i][j]
+    end
+end
+
+param_bounds
+
+
 # Set up Sobol analysis with parallel processing
 sampler = SobolSample()
 
-
-n_samples = 10
+R = Shift()
+n_samples = 1000
 
 # Generate design matrices
 A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
@@ -110,50 +117,53 @@ p1 = heatmap(ss1,
     xlabel = "Parameters",
     ylabel="Outputs",
     colorbar_title="\n First-Order Sensitivity Index",
-    c=:viridis,
-    clim=(0, max(maximum(ss1), 0.01)),  # Set colorbar limits with minimum of 0.01 to avoid issues with all zeros
+    c=:viridis,  # Set colorbar limits with minimum of 0.01 to avoid issues with all zeros
     size=(800, 600),rightmargin=5mm
 )
+
+
+
+
+ss1
+
+
+
+
+
+
+
 
 # savefig(p1, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sobol_indices.png")
 
 # Create heatmap for total-order indices
-# p2 = heatmap(sst,
-#     xticks=(1:7, param_names),
-#     yticks=(1:5, output_names),
-#     title="Total-Order Sobol Indices",
-#     xlabel="Parameters",
-#     ylabel="Outputs",
-#     colorbar_title="Sensitivity Index",
-#     c=:viridis,
-#     clim=(0, max(maximum(sst), 0.01)),
-#     size=(600, 400)
-# )
+p2 = heatmap(sst,
+    xticks=(1:7, param_names),
+    yticks=(1:5, output_names),
+    title="Total-Order Sobol Indices",
+    xlabel="Parameters",
+    ylabel="Outputs",
+    colorbar_title="Sensitivity Index",
+    c=:viridis,
+    clim=(0, max(maximum(sst), 0.01)),
+    size=(600, 400)
+)
 
 # plot(h0,p1,size=(1500,600))
 
 
 ##################
 
-param_bounds
-
-for i in 1:7
-    for j in 1:2
-        bounds[i][j] = param_bounds[i,j]
-    end
-end
-
 # A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
 # Standard regression GSA
 
 
-bounds = [[0, 10],    #A1  
-            [1,1.5*lambda1],      #lambda1
-            [0, 10],    #A2
-            [1, 1.5*lambda2],   #lambda2
-            [0, 10],   #m
-            [0, 10],    #A3
-            [1, 1.5*lambda1]]   #lambda3
+bounds = [[0, 5],    #A1  
+            [0.1, 30],      #lambda1
+            [0, 5],    #A2
+            [0.1, 30],   #lambda2
+            [0, 5],   #m
+            [0, 5],    #A3
+            [0.1, 30]]   #lambda3
 
 # this is good
 # bounds = [[0, 10],    #A1  
@@ -180,6 +190,8 @@ rs1h = heatmap(rs1,
     c=:bam, size=(800,600), clim=(-cc,cc)
 )
 
+rs1
+
 # savefig(rs1h, "C://Users/B00955735/OneDrive - Ulster University/Desktop/regression_sensitivity.png")
 
 # plot(rs1h,rs2h, layout=(1,2),size=(2000,600))
@@ -202,3 +214,66 @@ rs1h = heatmap(rs1,
 pp = plot(rs1h, p1, layout=(2,1), size=(800,1000), leftmargin=10mm)
 
 # savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/sensitivity_analysis.png")
+total_time
+ttt = 0:kesten_timestep:total_time
+plot(5 .* exp.(- ttt ./ 30),ylim=(0,1))
+
+
+
+
+
+
+
+
+########################################################
+
+
+using QuasiMonteCarlo
+
+# Construct randomized Sobol sampler
+sampler = SobolSample(Shift())
+n_samples = 1000
+d = size(param_bounds, 1)
+
+# Generate QMC samples
+A_raw = QuasiMonteCarlo.sample(n_samples, d, sampler)
+B_raw = QuasiMonteCarlo.sample(n_samples, d, sampler)
+
+# Scale samples to parameter bounds
+function scale_samples(samples, a, b)
+    return a .+ (b .- a) .* samples
+end
+
+a = param_bounds[:, 1]
+b = param_bounds[:, 2]
+
+A = scale_samples(A_raw, a, b)
+B = scale_samples(B_raw, a, b)
+
+# Run Sobol analysis
+sobol_result = gsa(model_func, Sobol(), A, B, batch=false, parallel=true)
+
+sss1 = sobol_result.S1
+sss2 = sobol_result.ST
+
+heatmap(sss1,
+    title="First-Order Sobol Indices",
+    xticks = (xpoints, xlabs),
+    yticks = (1:5, ylabs),
+    xlabel = "Parameters",
+    ylabel="Outputs",
+    colorbar_title="\n Total-Order Sensitivity Index",
+    c=:viridis,
+    size=(800, 600),rightmargin=5mm
+)
+
+heatmap(sss2,
+    title="Total-Order Sobol Indices",
+    xticks = (xpoints, xlabs),
+    yticks = (1:5, ylabs),
+    xlabel = "Parameters",
+    ylabel="Outputs",
+    colorbar_title="\n Total-Order Sensitivity Index",
+    c=:viridis,
+    size=(800, 600),rightmargin=5mm
+)
