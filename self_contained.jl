@@ -133,7 +133,7 @@ function track_times_variable_rates_007(total_time, total_pool_size, rates, ε, 
         # 3 Transitions from mature to immature
         mature_to_immature_indices = []
         for (id, size) in enumerate(synapse_sizes)
-            prob = A * exp(-size / lambda) * kesten_timestep #i*kesten_time_step
+            prob = A * exp(-size / lambda) * kesten_timestep
             if rand() < prob
                 push!(mature_to_immature_indices, id)
             end

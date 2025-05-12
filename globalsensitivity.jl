@@ -66,7 +66,7 @@ end
 # Parameter bounds for sensitivity analysis
 param_bounds = Matrix{Float64}(undef, 7, 2)
 param_means = [A1, lambda1, A2, lambda2, m, A3, lambda3]
-deltas = 10.0 .* param_means
+deltas = 1 .* param_means
 
 for i in 1:7
     param_bounds[i, 1] = max(0.000001, param_means[i] - deltas[i])
@@ -135,11 +135,38 @@ p1 = heatmap(ss1,
 
 ##################
 
+param_bounds
 
+for i in 1:7
+    for j in 1:2
+        bounds[i][j] = param_bounds[i,j]
+    end
+end
+
+# A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
 # Standard regression GSA
-#           A1      lambda1   A2   lambda2     m       A3        lambda3
-bounds = [[0, 10], [0, 50], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10]]
-reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 100)
+
+
+bounds = [[0, 10],    #A1  
+            [1,1.5*lambda1],      #lambda1
+            [0, 10],    #A2
+            [1, 1.5*lambda2],   #lambda2
+            [0, 10],   #m
+            [0, 10],    #A3
+            [1, 1.5*lambda1]]   #lambda3
+
+# this is good
+# bounds = [[0, 10],    #A1  
+#             [1,1.2*lambda1],      #lambda1
+#             [0, 10],    #A2
+#             [1, 2*lambda2],   #lambda2
+#             [0, 10],   #m
+#             [0, 10],    #A3
+#             [1, 1.5*lambda1]]   #lambda3
+
+
+
+reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
 
 rs1 = reg_sens.standard_regression
 cc = maximum(abs.(rs1))
@@ -152,6 +179,7 @@ rs1h = heatmap(rs1,
     colorbar_title = "\n Standardised Regression Coefficient",rightmargin=5mm,
     c=:bam, size=(800,600), clim=(-cc,cc)
 )
+
 # savefig(rs1h, "C://Users/B00955735/OneDrive - Ulster University/Desktop/regression_sensitivity.png")
 
 # plot(rs1h,rs2h, layout=(1,2),size=(2000,600))
