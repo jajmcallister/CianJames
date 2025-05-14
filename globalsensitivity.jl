@@ -83,21 +83,26 @@ param_bounds
 # Set up Sobol analysis with parallel processing
 sampler = SobolSample()
 
-R = Shift()
-n_samples = 1000
+# n_samples = 10
 
-# Generate design matrices
-A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
+# # Generate design matrices
+# A, B = QuasiMonteCarlo.generate_design_matrices(n_samples, param_bounds[:,1], param_bounds[:,2], sampler)
 
-# Run the analysis with parallel=true
-sobol_result = gsa(model_func, Sobol(), A, B, batch=false, parallel=true)
+# # Run the analysis with parallel=true
+# sobol_result = gsa(model_func, Sobol(nboot=100), A, B, batch=false, parallel=true, resampling=true, n_resamples=10)
+
+
+# ss1 = sobol_result.S1
+# sst = sobol_result.ST
+# ss1ci = sobol_result.S1_Conf_Int  # Confidence intervals for first-order indices
+# sstci = sobol_result.ST_Conf_Int   # Confidence intervals for total-effect indices
+
+# println(ss1ci)
 
 ylabs = ["Time when immature \n population reaches max", "Time when mature \n population reaches max", "Time when combined \n population reaches max", "Final immature \n population value", "Final mature \n population value"]
 xlabs = ["\n A1", "Creation", "\n λ1", "\n A2","Elimination", "\n λ2", "Maturation \n m", "\n A3", "De-maturation", "\n λ3"]
 xpoints = [1,1.5,2,3,3.5,4,5,6,6.5,7]
 
-ss1 = sobol_result.S1
-sst = sobol_result.ST
 # Parameter and output names for plotting
 param_names = ["A1", "λ1", "A2", "λ2", "m", "A3", "λ3"]
 output_names = [
@@ -176,21 +181,21 @@ bounds = [[0, 5],    #A1
 
 
 
-reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
+# reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
 
-rs1 = reg_sens.standard_regression
-cc = maximum(abs.(rs1))
-rs1h = heatmap(rs1,
-    xticks = (xpoints, xlabs),
-    yticks = (1:5, ylabs),
-    xlabel = "Parameters",
-    ylabel = "Outputs",
-    title = "Regression Global Sensitivity Analysis",
-    colorbar_title = "\n Standardised Regression Coefficient",rightmargin=5mm,
-    c=:bam, size=(800,600), clim=(-cc,cc)
-)
+# rs1 = reg_sens.standard_regression
+# cc = maximum(abs.(rs1))
+# rs1h = heatmap(rs1,
+#     xticks = (xpoints, xlabs),
+#     yticks = (1:5, ylabs),
+#     xlabel = "Parameters",
+#     ylabel = "Outputs",
+#     title = "Regression Global Sensitivity Analysis",
+#     colorbar_title = "\n Standardised Regression Coefficient",rightmargin=5mm,
+#     c=:bam, size=(800,600), clim=(-cc,cc)
+# )
 
-rs1
+# rs1
 
 # savefig(rs1h, "C://Users/B00955735/OneDrive - Ulster University/Desktop/regression_sensitivity.png")
 
@@ -250,13 +255,30 @@ b = param_bounds[:, 2]
 A = scale_samples(A_raw, a, b)
 B = scale_samples(B_raw, a, b)
 
-# Run Sobol analysis
-sobol_result = gsa(model_func, Sobol(), A, B, batch=false, parallel=true)
 
-sss1 = sobol_result.S1
-sss2 = sobol_result.ST
+# getting confidence intervals
 
-heatmap(sss1,
+# sobol_result = gsa(model_func, Sobol(nboot=100), A, B; 
+#                    batch=false, 
+#                    parallel=true, 
+#                    resampling=true, 
+#                    n_resamples=10)
+
+                   
+sobol_result = gsa(model_func, Sobol(nboot=2), A, B; 
+                    batch=false, 
+                    parallel=true, 
+                    resampling=true)
+
+
+s1 = sobol_result.S1  # First-order indices
+s2 = sobol_result.ST  # Total-effect indices
+s1ci = sobol_result.S1_Conf_Int  # Confidence intervals for first-order indices
+s2ci = sobol_result.ST_Conf_Int   # Confidence intervals for total-effect indices
+
+println(s1ci)
+
+heatmap(s1,
     title="First-Order Sobol Indices",
     xticks = (xpoints, xlabs),
     yticks = (1:5, ylabs),
@@ -267,7 +289,50 @@ heatmap(sss1,
     size=(800, 600),rightmargin=5mm
 )
 
-heatmap(sss2,
+vals = round.(s1; digits=3)
+ci_halfwidths = round.(s1ci; digits=3)
+
+ann = []
+for i in 1:size(s1, 1), j in 1:size(s1, 2)
+    label = string(vals[i, j], " [±", ci_halfwidths[i, j], "]")
+    push!(ann, (j, i, text(label, :white, :center)))
+end
+
+heatmap(s1,
+    title="First-Order Sobol Indices",
+    xticks=(1:size(s1, 2), xlabs),
+    yticks=(1:size(s1, 1), ylabs),
+    xlabel="Parameters",
+    ylabel="Outputs",
+    colorbar_title="\nFirst-Order Index",
+    c=:viridis,
+    annotations=ann,
+    size=(1600, 1200),
+    right_margin=5mm
+)
+
+
+# Half-width intervals
+s1_lower = s1 .- s1ci
+s1_upper = s1 .+ s1ci
+
+s2_lower = s2 .- s2ci
+s2_upper = s2 .+ s2ci
+
+heatmap(s1,
+    title="First-Order Sobol Indices",
+    xticks = (xpoints, xlabs),
+    yticks = (1:5, ylabs),
+    xlabel = "Parameters",
+    ylabel="Outputs",
+    colorbar_title="\n Total-Order Sensitivity Index",
+    c=:viridis,
+    size=(800, 600),rightmargin=5mm
+)
+
+minimum(s1)
+
+heatmap(s2,
     title="Total-Order Sobol Indices",
     xticks = (xpoints, xlabs),
     yticks = (1:5, ylabs),
@@ -277,3 +342,10 @@ heatmap(sss2,
     c=:viridis,
     size=(800, 600),rightmargin=5mm
 )
+
+
+
+
+
+
+
