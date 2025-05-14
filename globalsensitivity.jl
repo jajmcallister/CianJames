@@ -40,7 +40,7 @@ end
         
         # Run multiple simulations and average the results
         ihs, mhs = [], []
-        for _ in 1:3  # Reduced for faster calculation
+        for _ in 1:100  # Reduced for faster calculation
             ih, mh, _, _, _, _ = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep)
             push!(ihs, ih)
             push!(mhs, mh)
@@ -237,7 +237,7 @@ using QuasiMonteCarlo
 
 # Construct randomized Sobol sampler
 sampler = SobolSample(Shift())
-n_samples = 1000
+n_samples = 10
 d = size(param_bounds, 1)
 
 # Generate QMC samples
@@ -265,7 +265,7 @@ B = scale_samples(B_raw, a, b)
 #                    n_resamples=10)
 
                    
-sobol_result = gsa(model_func, Sobol(nboot=2), A, B; 
+sobol_result = gsa(model_func, Sobol(nboot=10), A, B; 
                     batch=false, 
                     parallel=true, 
                     resampling=true)
@@ -276,7 +276,6 @@ s2 = sobol_result.ST  # Total-effect indices
 s1ci = sobol_result.S1_Conf_Int  # Confidence intervals for first-order indices
 s2ci = sobol_result.ST_Conf_Int   # Confidence intervals for total-effect indices
 
-println(s1ci)
 
 heatmap(s1,
     title="First-Order Sobol Indices",
