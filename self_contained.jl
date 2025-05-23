@@ -887,15 +887,15 @@ plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color
 
 
 
-using Optimization
-rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
-x0 = zeros(2)
-p = [1.0, 100.0]
+# using Optimization
+# rosenbrock(x, p) = (p[1] - x[1])^2 + p[2] * (x[2] - x[1]^2)^2
+# x0 = zeros(2)
+# p = [1.0, 100.0]
 
-prob = OptimizationProblem(rosenbrock, x0, p)
+# prob = OptimizationProblem(rosenbrock, x0, p)
 
-using OptimizationOptimJL
-sol = solve(prob, NelderMead(), g_tol=1e-9)
+# using OptimizationOptimJL
+# sol = solve(prob, NelderMead(), g_tol=1e-9)
 
 
 

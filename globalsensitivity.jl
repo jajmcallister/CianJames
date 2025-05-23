@@ -40,7 +40,7 @@ end
         
         # Run multiple simulations and average the results
         ihs, mhs = [], []
-        for _ in 1:30
+        for _ in 1:50
             ih, mh, _, _, _, _ = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep)
             push!(ihs, ih)
             push!(mhs, mh)
