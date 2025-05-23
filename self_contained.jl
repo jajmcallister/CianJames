@@ -403,7 +403,7 @@ end
 #     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 # end
 
-total_pool_size = 100
+total_pool_size = 1000
 total_time = 120
 kesten_timestep = 0.1
 
@@ -471,10 +471,11 @@ v3 = vcat([synapse_size_history_multiple[i][trunc(Int,55/kesten_timestep)] for i
 v4 = vcat([synapse_size_history_multiple[i][trunc(Int,120/kesten_timestep)] for i in 1:num_trials]...) 
 
 # Compute kernel density estimate
-kde_result1 = kde(v1,bandwidth=0.5)
-kde_result2 = kde(v2,bandwidth=0.5)
-kde_result3 = kde(v3,bandwidth=0.5)
-kde_result4 = kde(v4,bandwidth=0.5)
+bw=0.1
+kde_result1 = kde(v1,bandwidth=bw)
+kde_result2 = kde(v2,bandwidth=bw)
+kde_result3 = kde(v3,bandwidth=bw)
+kde_result4 = kde(v4,bandwidth=bw)
 
 color1 = RGB(176/255, 178/255, 240/255)
 color2 = RGB(78/255,84/255,182/255)
@@ -485,7 +486,7 @@ distsplot = plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", c
 plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
 plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
 plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4,
-        xlabel="Synaptic weight (a.u.)", grid=false, xlim=(-0.2,3), title="Distributions of synaptic weight over time",
+        xlabel="Synaptic weight (a.u.)", grid=false, xlim=(-0.2,5), title="Distributions of synaptic weight over time",
         legendfontsize=12, ylabel="Density")
 
 # savefig(distsplot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/distplot1.png")
@@ -751,7 +752,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
         #     synapse_sizes = synapse_sizes[num_delete_matures+1:end] # ... and delete the first num_delete_matures
         # end
 
-        elseif N_M < length(synapse_sizes)
+        elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
             num_delete_matures = length(synapse_sizes) - round(Int, N_M) #find how many need to be deleted
             sizes = synapse_sizes
             weights = exp.(-sizes ./ λ)
@@ -761,7 +762,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
             delete_indices = sample(1:length(sizes), Weights(weights), num_delete_matures; replace=false)
         
             # Remove selected synapses from the synapse_sizes array before applying Kesten process
-            synapse_sizes = deleteat!(synapse_sizes, sort(delete_indices; rev=true))
+            synapse_sizes = deleteat!(synapse_sizes, sort(delete_indices))
         end
 
         # Apply Kesten process to mature synapses in N_M
@@ -779,8 +780,8 @@ end
 total_pool_size = 100
 # ε, η = .985, 1-ε
 # σ_ε, σ_η = .1, .1
-kesten_timestep = .2
-i=A
+kesten_timestep = .1
+i=A3
 paramss = (m, i, lambda3)
 
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -816,6 +817,10 @@ plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:g
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
 plot!(grid=false,ylim=(0,total_pool_size),legendfontsize=12)
 
+plot(0:kesten_timestep:total_time,ih)
+plot!(0:kesten_timestep:total_time,mh)
+plot!(0:kesten_timestep:total_time,ih+mh)
+
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
 # savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
@@ -834,10 +839,11 @@ v3 = synapse_sizes_history_var[55]
 v4 = synapse_sizes_history_var[120]
 
 # Compute kernel density estimate
-kde_result1 = kde(v1,bandwidth=0.3)
-kde_result2 = kde(v2,bandwidth=0.3)
-kde_result3 = kde(v3,bandwidth=0.3)
-kde_result4 = kde(v4,bandwidth=0.3)
+bw=0.5
+kde_result1 = kde(v1,bandwidth=bw)
+kde_result2 = kde(v2,bandwidth=bw)
+kde_result3 = kde(v3,bandwidth=bw)
+kde_result4 = kde(v4,bandwidth=bw)
 
 color1 = RGB(176/255, 178/255, 240/255)
 color2 = RGB(78/255,84/255,182/255)
