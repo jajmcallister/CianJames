@@ -206,7 +206,10 @@ s2 = sobol_result.ST  # Total-effect indices
 s1ci = sobol_result.S1_Conf_Int  # Confidence intervals for first-order indices
 s2ci = sobol_result.ST_Conf_Int   # Confidence intervals for total-effect indices
 
+s1
 s1ci 
+s2
+s2ci
 heatmap(s1,
     title="First-Order Sobol Indices",
     xticks = (xpoints, xlabs),
@@ -241,26 +244,6 @@ heatmap(s1,
 )
 
 
-# Half-width intervals
-s1_lower = s1 .- s1ci
-s1_upper = s1 .+ s1ci
-
-s2_lower = s2 .- s2ci
-s2_upper = s2 .+ s2ci
-
-heatmap(s1,
-    title="First-Order Sobol Indices",
-    xticks = (xpoints, xlabs),
-    yticks = (1:5, ylabs),
-    xlabel = "Parameters",
-    ylabel="Outputs",
-    colorbar_title="\n Total-Order Sensitivity Index",
-    c=:viridis,
-    size=(800, 600),rightmargin=5mm
-)
-
-minimum(s1)
-
 heatmap(s2,
     title="Total-Order Sobol Indices",
     xticks = (xpoints, xlabs),
@@ -274,7 +257,7 @@ heatmap(s2,
 
 
 
-
+plot(heatmap(s1), heatmap(s2), clim=(0,1))
 
 
 
