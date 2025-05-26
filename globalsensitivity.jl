@@ -9,53 +9,66 @@ if nprocs() == 1
     @everywhere using GlobalSensitivity, Statistics, Distributions
 end
 
+# Parameters
+A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
+ε, η = 0.985, 1 - 0.985
+σ_ε, σ_η = 0.1, 0.1
+
+# Constants required for the model
+b1 = 0.2
+b2 = 0.2
+total_time = 120.0
+total_pool_size = 100
+kesten_timestep = 0.1
+
 # Make sure all workers have the necessary functions and parameters
 @everywhere begin
-    # Parameters
-    A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
-    ε, η = 0.985, 1 - 0.985
-    σ_ε, σ_η = 0.1, 0.1
-    
-    # Constants required for the model
-    b1 = 0.2
-    b2 = 0.2
-    total_time = 120.0
-    total_pool_size = 100
-    kesten_timestep = 0.1
 
-    
     # Model function that will be evaluated in parallel
     function model_func(p)
         A1,lambda1,A2,lambda2,m,A3,lambda3 = p
         
-        # Define creation and elimination functions
-        creation_func(t) = A1 * exp(-t / lambda1) + b1
-        elimination_func(t) = A2 * exp(-t / lambda2) + b2
+        # # Define creation and elimination functions
+        # creation_func(t) = A1 * exp(-t / lambda1) + b1
+        # elimination_func(t) = A2 * exp(-t / lambda2) + b2
     
-        # Calculate rates over time
-        elim = elimination_func.(0:kesten_timestep:total_time)
-        creat = creation_func.(0:kesten_timestep:total_time)
+        # # Calculate rates over time
+        # elim = elimination_func.(0:kesten_timestep:total_time)
+        # creat = creation_func.(0:kesten_timestep:total_time)
     
-        rates_var = creat, m, elim, A3, lambda3
+        # rates_var = creat, m, elim, A3, lambda3
         
-        # Run multiple simulations and average the results
-        ihs, mhs = [], []
-        for _ in 1:50
-            ih, mh, _, _, _, _ = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep)
-            push!(ihs, ih)
-            push!(mhs, mh)
-        end
-        ih_avg = mean(ihs)
-        mh_avg = mean(mhs)
+        # # Run multiple simulations and average the results
+        # ihs, mhs = [], []
+        # for _ in 1:50
+        #     ih, mh, _, _, _, _ = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep)
+        #     push!(ihs, ih)
+        #     push!(mhs, mh)
+        # end
+        # ih_avg = mean(ihs)
+        # mh_avg = mean(mhs)
         
-        # Calculate outputs
-        time_max_imm = argmax(ih_avg) * kesten_timestep
-        time_max_mat = argmax(mh_avg) * kesten_timestep
-        combined = ih_avg .+ mh_avg
-        time_max_combined = argmax(combined) * kesten_timestep
-        final_imm = ih_avg[end]
-        final_mat = mh_avg[end]
+        # # Calculate outputs
+        # time_max_imm = argmax(ih_avg) * kesten_timestep
+        # time_max_mat = argmax(mh_avg) * kesten_timestep
+        # combined = ih_avg .+ mh_avg
+        # time_max_combined = argmax(combined) * kesten_timestep
+        # final_imm = ih_avg[end]
+        # final_mat = mh_avg[end]
+
+        paramss = (A1, lambda1, A2, lambda2, m, A3, lambda3)
         
+        sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
+        immature_population_var = sol[1, :]
+        mature_population_var = sol[2, :]
+
+        time_max_imm = sol.t[argmax(immature_population_var)]*kesten_timestep
+        time_max_mat = sol.t[argmax(mature_population_var)]*kesten_timestep
+        combined_population_var = immature_population_var .+ mature_population_var
+        time_max_combined = sol.t[argmax(combined_population_var)]*kesten_timestep
+        final_imm = immature_population_var[end]
+        final_mat = mature_population_var[end]
+
         return [time_max_imm, time_max_mat, time_max_combined, final_imm, final_mat]
     end
 end
@@ -122,7 +135,7 @@ bounds = [[0, 5],    #A1
 
 
 # Standard regression GSA
-reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 100)
+reg_sens = gsa(model_func, RegressionGSA(true), bounds, samples = 1000)
 
 rs1 = reg_sens.standard_regression
 cc = maximum(abs.(rs1))
@@ -157,7 +170,7 @@ rs1h = heatmap(rs1,
 # )
 
 
-
+plot(rs1h, h1, h2, layout=(3,1), size=(2400,600), legend=false)
 
 
 ########################################################
@@ -167,7 +180,7 @@ using QuasiMonteCarlo
 
 # Construct randomized Sobol sampler
 sampler = SobolSample(Shift())
-n_samples = 2000
+n_samples = 1000
 d = size(param_bounds, 1)
 
 # Generate QMC samples
@@ -195,10 +208,11 @@ B = scale_samples(B_raw, a, b)
 #                    n_resamples=10)
 
                    
-sobol_result = gsa(model_func, Sobol(nboot=100), A, B; 
+sobol_result = gsa(model_func, Sobol(nboot=10), A, B; 
                     batch=false, 
                     parallel=true, 
-                    resampling=true)
+                    resampling=true,
+                    n_resamples=10)
 
 
 s1 = sobol_result.S1  # First-order indices
@@ -222,15 +236,15 @@ heatmap(s1,
 )
 
 vals = round.(s1; digits=3)
-ci_halfwidths = round.(s1ci; digits=3)
+ci_widths = round.(s1ci; digits=3)
 
 ann = []
 for i in 1:size(s1, 1), j in 1:size(s1, 2)
-    label = string(vals[i, j], " [±", ci_halfwidths[i, j], "]")
+    label = string(vals[i, j], " [±", ci_widths[i, j], "]")
     push!(ann, (j, i, text(label, :white, :center)))
 end
 
-heatmap(s1,
+h1 = heatmap(s1,
     title="First-Order Sobol Indices",
     xticks=(1:size(s1, 2), xlabs),
     yticks=(1:size(s1, 1), ylabs),
@@ -244,7 +258,7 @@ heatmap(s1,
 )
 
 
-heatmap(s2,
+h2 = heatmap(s2,
     title="Total-Order Sobol Indices",
     xticks = (xpoints, xlabs),
     yticks = (1:5, ylabs),

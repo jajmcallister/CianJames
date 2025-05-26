@@ -403,7 +403,7 @@ end
 #     return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap
 # end
 
-total_pool_size = 1000
+total_pool_size = 100
 total_time = 120
 kesten_timestep = 0.1
 
@@ -425,11 +425,11 @@ A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
 σ_ε, σ_η = .1, .1
 
 
-creation_func(t) = A1 * exp(-t / lambda1) + b1
-elimination_func(t) = A2 * exp(-t / lambda2) + b2
+creation_func(t,A1,lambda1) = A1 * exp(-t / lambda1) + b1
+elimination_func(t,A2,lambda2) = A2 * exp(-t / lambda2) + b2
 
-elim = elimination_func.(0:kesten_timestep:total_time)
-creat = creation_func.(0:kesten_timestep:total_time)
+creat = creation_func.(0:kesten_timestep:total_time, A1, lambda1)
+elim = elimination_func.(0:kesten_timestep:total_time, A2, lambda2)
 
 ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
 plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel="Rate", xlabel="Days")
@@ -682,33 +682,34 @@ plot!(grid=false,legendfontsize=12,ylim=(0,total_pool_size))
 
 
 function synapse_dynamics_var007!(du, u, p, t)
-    c_t, m, e_t, i, λ, synapse_sizes = p 
+    A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes = p 
     N_I, N_M, N_P = u
-    A = i
 
     # Compute the rate of dematuration using the exponential probability distribution
     # Sum over all mature synapses' probabilities of transitioning to immature state
     if !isempty(synapse_sizes)
-        dematuration_rate = A * sum(exp(- size / λ) for size in synapse_sizes) / length(synapse_sizes)
+        dematuration_rate = A3* sum(exp(- size / lambda3) for size in synapse_sizes) / length(synapse_sizes)
     else
         dematuration_rate = 0
     end
     # dematuration_rate = i
     # Apply time-dependent e(t) and c(t)
-    e_t = elimination_func(t)
-    c_t = creation_func(t)
+    c_t = creation_func(t, A1, lambda1)
+    e_t = elimination_func(t, A2, lambda2)
+    
 
     du[1] = c_t * N_P - (m + e_t) * N_I + (dematuration_rate) * N_M  # dN_I/dt
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
     du[3] = - du[1] - du[2]  # dN_P/dt
 end
 
-function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_time_step)
+function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η, σ_ε, σ_η, kesten_time_step)
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
     synapse_sizes_history = []
-    m, i, λ = paramss
+    A1, lambda1, A2, lambda2, m, A3, lambda3 = paras
+    # A, m, i, λ = paramss
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
     tspan = (0.0, total_time);
@@ -720,12 +721,12 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
     # prob = ODEProblem(synapse_dynamics_var!, u0, tspan, p);
 
     current_time = 0.0;
-
-    prams = creation_func(current_time),m,elimination_func(current_time),i, λ, synapse_sizes
+    
+    prams = A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes
     probb = ODEProblem(synapse_dynamics_var007!, u0, tspan, prams);
 
     while current_time < total_time
-        prams = creation_func(current_time),m,elimination_func(current_time),i, λ, synapse_sizes
+        prams = A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes
         probb = ODEProblem(synapse_dynamics_var007!, u0, tspan, prams);
         sol = solve(probb, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
@@ -755,7 +756,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, 
         elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
             num_delete_matures = length(synapse_sizes) - round(Int, N_M) #find how many need to be deleted
             sizes = synapse_sizes
-            weights = exp.(-sizes ./ λ)
+            weights = A3 * exp.(-sizes ./ lambda3)
             weights ./= sum(weights)  # Normalise to sum to 1
         
             # Sample indices to delete based on weights, without replacement
@@ -780,11 +781,11 @@ end
 total_pool_size = 100
 # ε, η = .985, 1-ε
 # σ_ε, σ_η = .1, .1
-kesten_timestep = .1
+kesten_time_step = .1
 i=A3
-paramss = (m, i, lambda3)
+parameters = (A1, lambda1, A2, lambda2, m, A3, lambda3)
 
-sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, paramss, ε, η, σ_ε, σ_η, kesten_timestep);
+sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
 
 time_array_var = sol.t
 immature_population_var = sol[1, :]
