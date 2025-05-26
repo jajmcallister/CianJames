@@ -170,7 +170,7 @@ rs1h = heatmap(rs1,
 # )
 
 
-plot(rs1h, h1, h2, layout=(3,1), size=(2400,600), legend=false)
+plot(rs1h, h1, h2, layout=(3,1), size=(400,1000), legend=false)
 
 
 ########################################################
