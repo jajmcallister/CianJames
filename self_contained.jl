@@ -419,7 +419,8 @@ b1 = 0.2
 b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
-A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
+A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.05, 0.05, 2.
+A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.04557090317553659, 0.06622531490863738, 3.3026174908321067
 ε = .985
 η = 1-ε
 σ_ε, σ_η = .1, .1
@@ -427,6 +428,8 @@ A1,lambda1,A2,lambda2,m,A3,lambda3 = 0.9, 30, 2, 5, 0.05, 0.05, 2.
 
 creation_func(t,A1,lambda1) = A1 * exp(-t / lambda1) + b1
 elimination_func(t,A2,lambda2) = A2 * exp(-t / lambda2) + b2
+de_maturation_func(t,A3,lambda3) = A3 * exp(-t / lambda3)
+
 
 creat = creation_func.(0:kesten_timestep:total_time, A1, lambda1)
 elim = elimination_func.(0:kesten_timestep:total_time, A2, lambda2)
@@ -434,6 +437,7 @@ elim = elimination_func.(0:kesten_timestep:total_time, A2, lambda2)
 ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
 plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel="Rate", xlabel="Days")
 
+plot(de_maturation_func.(0:0.01:10, A3, lambda3), lw=3, label="De-maturation rate", ylabel="Rate", xlabel="Days", title="De-maturation rate over time")
 # savefig(ec_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ec_rate.png")
 # creat = sigmoid_creation.(0:kesten_timestep:total_time)
 
@@ -533,7 +537,7 @@ p1 = plot(timepoints,geommeanweights,xlabel="Postnatal Day",grid=false,c=:firebr
 p2 = plot(timepoints,geomstdweights,xlabel="Postnatal Day",grid=false,c=:coral2,title="Geometric standard deviation", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 p3 = plot(timepoints,top25meanweights,c=:lightslateblue,title="Mean of top 25% of synaptic weights",grid=false,xlabel="Postnatal Day", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 
-p4 = plot(timepoints, meanweights,xlabel="Postnatal Day",grid=false,ylim=(0,1),c=:firebrick2,title="Arithmetic mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
+p4 = plot(timepoints, meanweights,xlabel="Postnatal Day",grid=false,ylim=(0,2),c=:firebrick2,title="Arithmetic mean", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 p5 = plot(timepoints,stdweights,xlabel="Postnatal Day",grid=false,c=:coral2,ylim=(0,1),title="Arithmetic standard deviation", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
 
 p6 = plot(timepoints,skewnessweights,xlabel="Postnatal Day",c=:black,grid=false,ylim=(0,3),title="Skewness", xticks=timepoints,ylabel="Synaptic weight (a.u.)",label=false,lw=5)
@@ -545,9 +549,10 @@ p6 = plot(timepoints,skewnessweights,xlabel="Postnatal Day",c=:black,grid=false,
 
 
 
-
-
-
+# checking total synaptic change over time
+syn_sum = [sum.(synapse_size_history_multiple[i]) for i in 1:num_trials]
+mean_syn_sum = mean(syn_sum, dims=1)
+plot(mean_syn_sum)
 
 
 
@@ -633,6 +638,7 @@ development_survival_error = development_points_to_match_sim - development_point
 adulthood_survival_error = adulthood_points_to_match_sim - adulthood_points_to_match_data
 
 total_error = sum(development_survival_error.^2) + sum(adulthood_survival_error.^2)
+
 total_error = sum(development_survival_error.^2)/length(development_survival_error) + sum(adulthood_survival_error.^2)/length(adulthood_survival_error)
 
 
@@ -778,7 +784,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-total_pool_size = 100
+total_pool_size = 1000
 # ε, η = .985, 1-ε
 # σ_ε, σ_η = .1, .1
 kesten_time_step = .1
@@ -856,6 +862,74 @@ plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", color=color1)
 plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
 plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
 plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false, xlim=(-0.2,4))
+
+
+combined_synapse_sizes = []
+
+tttrials = 100
+for i in 1:tttrials
+    sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
+    push!(combined_synapse_sizes, sum.(synapse_sizes_history_var))
+end
+
+xticks1 = collect(0:20:120)
+p = plot(0:kesten_timestep:total_time, mean(combined_synapse_sizes), xticks=xticks1, ribbon=std(combined_synapse_sizes)/sqrt(tttrials), grid=false, lw=3, title="Total synaptic weight over time", xlabel="Days", ylabel="Total synaptic weight", legend=false)
+
+# savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/total_syn_weight.png")
+
+
+
+########################
+########################
+# working out information stored in distribution of synaptic weights
+
+function bartol_bits(sizes)
+    if isempty(sizes)
+        return NaN
+    end
+    μ = mean(sizes)
+    σ = std(sizes)
+    cv = σ / μ
+
+    # Range of observed synaptic sizes
+    s_min, s_max = minimum(sizes), maximum(sizes)
+    dynamic_range = s_max - s_min
+
+    # Bin width is set by variability (Bartol used CV)
+    bin_width = cv * μ
+    N = max(1, floor(dynamic_range / bin_width))   # distinguishable states
+    return log2(N)  # bits per synapse
+end
+
+function bartol_bits_over_time(size_history)
+    return [bartol_bits(sizes) for sizes in size_history]
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
