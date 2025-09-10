@@ -589,7 +589,7 @@ hists = heatmap(
     xlabel = "Time",
     ylabel = "Synapse Size",
     colorbar_title = "Count",
-    title = "Histograms of synapse size across time", clims=(0,2)
+    title = "Histograms of synapse size across time", clims=(0,20)
 )
 
 
@@ -718,6 +718,7 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η
     # A, m, i, λ = paramss
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
+    # u0 = [total_pool_size*0.4, total_pool_size*0.3, total_pool_size*0.3];
     tspan = (0.0, total_time);
     # p = (m, i, λ, synapse_sizes)
     Ihist = []
@@ -789,6 +790,7 @@ total_pool_size = 1000
 # σ_ε, σ_η = .1, .1
 kesten_time_step = .1
 i=A3
+m = 0.05
 parameters = (A1, lambda1, A2, lambda2, m, A3, lambda3)
 
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -803,6 +805,8 @@ id_of_bump = argmax(immature_population_var+mature_population_var)
 xtickss = collect(0:20:120)
 push!(xtickss, trunc(Int,time_array_var[id_of_bump]))
 xtickss=sort(xtickss)
+
+p2
 
 using Plots.PlotMeasures
 var_plot = plot(0:kesten_timestep:total_time, mean(ihs), lw=2, fillalpha=0.2,  ribbon=std(ihs)/num_trials, label="Immature (Random walks)", color=:pink)
@@ -828,6 +832,7 @@ plot(0:kesten_timestep:total_time,ih)
 plot!(0:kesten_timestep:total_time,mh)
 plot!(0:kesten_timestep:total_time,ih+mh)
 
+p2
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
 # savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
@@ -852,6 +857,12 @@ kde_result2 = kde(v2,bandwidth=bw)
 kde_result3 = kde(v3,bandwidth=bw)
 kde_result4 = kde(v4,bandwidth=bw)
 
+# Scale by total synaptic strength to get "unnormalised" curves
+scaled_density1 = kde_result1.density .* sum(v1)
+scaled_density2 = kde_result2.density .* sum(v2)
+scaled_density3 = kde_result3.density .* sum(v3)
+scaled_density4 = kde_result4.density .* sum(v4)
+
 color1 = RGB(176/255, 178/255, 240/255)
 color2 = RGB(78/255,84/255,182/255)
 color3 = RGBA(221/255, 221/255, 221/255, 255/255)
@@ -863,20 +874,32 @@ plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2
 plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
 plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false, xlim=(-0.2,4))
 
+plot(kde_result1.x, scaled_density1, linewidth=4, label="P15", color=color1)
+plot!(kde_result2.x, scaled_density2, linewidth=4, label="P35", color=color2)
+plot!(kde_result3.x, scaled_density3, linewidth=4, label="P55", color=color3)
+plot!(kde_result4.x, scaled_density4, linewidth=4, label="P120", color=color4,
+      xlabel="Synaptic weight", ylabel="Total synaptic strength", grid=false, xlim=(-0.2,4))
+
+bins=0:.1:5
+histogram(v1, fillalpha=0.5, bins=bins)
+histogram!(v2, fillalpha=0.5, bins=bins)
+histogram!(v3, fillalpha=0.5, bins=bins)
+histogram!(v4, fillalpha=0.5, xlabel="Synaptic weight", ylabel="Count", bins=bins)
 
 combined_synapse_sizes = []
+trials_synapse_sizes = []
 
-tttrials = 100
+tttrials = 20
 for i in 1:tttrials
     sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
     push!(combined_synapse_sizes, sum.(synapse_sizes_history_var))
+    push!(trials_synapse_sizes, synapse_sizes_history_var)
 end
 
 xticks1 = collect(0:20:120)
 p = plot(0:kesten_timestep:total_time, mean(combined_synapse_sizes), xticks=xticks1, ribbon=std(combined_synapse_sizes)/sqrt(tttrials), grid=false, lw=3, title="Total synaptic weight over time", xlabel="Days", ylabel="Total synaptic weight", legend=false)
 
 # savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/total_syn_weight.png")
-
 
 
 ########################
@@ -901,12 +924,36 @@ function bartol_bits(sizes)
     return log2(N)  # bits per synapse
 end
 
-function bartol_bits_over_time(size_history)
-    return [bartol_bits(sizes) for sizes in size_history]
+using SpecialFunctions
+function bartol_bits_theory(sizes; CV=0.083, overlap=0.69, min_clip=1e-3)
+    if isempty(sizes)
+        return NaN
+    end
+    
+    smin = max(minimum(sizes), min_clip)
+    smax = maximum(sizes)
+    range_factor = smax / smin
+
+    # z corresponding to 69% discrimination
+    z = sqrt(2) * erfinv(overlap)
+    spacing_factor = 1 + 2 * CV * z
+
+    # number of distinguishable states
+    N = log(range_factor) / log(spacing_factor)
+    return log2(N)  # bits per synapse
 end
 
 
 
+function bartol_bits_over_time(size_history)
+    return [bartol_bits_theory(sizes) for sizes in size_history]
+end
+
+
+bits_timecourse = [bartol_bits_over_time(syn_hist) for syn_hist in trials_synapse_sizes]
+plot(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3,
+     xlabel="Time", ylabel="Bits per synapse",
+     label="Information capacity", color=:darkgreen, xticks=xticks1, size=(700,500))
 
 
 
@@ -915,33 +962,83 @@ end
 
 
 
+### paul's distribution data
+using Trapz  # for trapezoidal integration
+
+# Data as dictionaries of vectors
+data = Dict(
+    "P15" => ([0.6732111463850229, 1.3043471980192245, 2.019635044217049, 2.776997985165697,
+               3.997194993683278, 5.4698457808297505, 7.8681630980521104, 11.192146945350368,
+               14.263673803895774, 16.998596694310645, 20.028051668229192],
+              [15.690377445561595, 266.7364165745415, 1114.0167986348492, 1060.669491378325,
+               571.1297629600457, 326.3598987509062, 131.79907477625085, 50.20915994256428,
+               31.380754891122745, 15.690377445561595, 12.55234983968099]),
+
+    "P35" => ([0.7994396407614467, 1.5147258818972922, 2.019635044217049, 2.650771095851251,
+               3.5764376259271438, 4.417952361439413, 5.427770686078928, 6.732119489160131,
+               8.07854178193018, 9.046285011818872, 11.82328299698457, 14.726509476526694,
+               18.176718608077405, 21.54277755012648, 24.82468630267392, 27.81206297171768],
+              [28.24272728524214, 269.87456388850165, 790.7950471979033, 743.7239148612194,
+               527.1966582292422, 423.6401910301539, 304.3931069693449, 222.803431551818,
+               197.69885158053575, 160.041802061493, 100.41831988512811, 65.89953738812565,
+               40.79507712492357, 34.5187824970029, 25.10469967936198, 21.966432657321914]),
+
+    "P55" => ([1.0098183246395143, 1.3884989925828477, 2.7349228904148744, 3.450210736612699,
+               4.586255950566658, 6.016830037900329, 7.237027046417912, 8.499299149686312,
+               9.382888979949403, 10.561010893716167, 13.169705289754615, 14.389902298272196,
+               15.988781579795091, 17.166900283437894, 18.80785465971161, 21.16409527712117,
+               23.772792883283582, 25.960729911565895, 29.957924905249172],
+              [18.828405051441756, 56.48545457048472, 461.29688142495723, 524.0583912072021,
+               451.8829183153963, 367.1546167515897, 285.564941334063, 244.76986420913968,
+               219.66528423785786, 172.59415190117375, 119.24696435272955, 100.41831988512811,
+               91.00423706748762, 72.17583201604587, 43.93310473080329, 34.5187824970029,
+               25.10469967936198, 18.828405051441756, 18.828405051441756]),
+
+    "P120" => ([0.8415147355122694, 1.3884989925828477, 2.692847795664053, 3.3660589420490776,
+                4.628331045317479, 5.427770686078928, 6.185133627027572, 7.237027046417912,
+                8.120616876681003, 10.350632209838098, 12.74894792199848, 15.063113444657219,
+                17.798036335072098, 20.911641498492283, 24.109396851414107, 27.18092692008348,
+                30.0],
+               [15.690377445561595, 59.62348217636466, 643.3054752680116, 646.4436225819717,
+                520.9206030174819, 411.08796089855286, 338.91212888250726, 266.7364165745415,
+                235.35566168341902, 144.35142461593185, 87.86620946160703, 65.89953738812565,
+                37.656810102883064, 25.10469967936198, 28.24272728524214, 18.828405051441756,
+                9.41432223380083]))
 
 
 
+# Desired order
+plot_order = ["P15","P35","P55","P120"]
+colors = [RGB(0.7,0.85,1.0), RGB(0.4,0.7,1.0), RGB(0.2,0.5,1.0), RGB(0.0,0.2,0.8)]
+
+p_auc = plot()
+for (i, label) in enumerate(plot_order)
+    x, y = data[label]  # get the correct curve
+    plot!(x, y, label=label, color=colors[i], lw=3)
+end
+xlabel!("Size * Intensity Mean")
+ylabel!("Frequency")
+title!("Distributions", size=(600,400), grid=false)
+
+# Compute areas
+areas = Dict()
+auc_data = []
+for (label, (x, y)) in data
+    areas[label] = trapz(x, y)
+    push!(auc_data, areas[label])
+end
 
 
+for label in plot_order
+    x, y = data[label]
+    areas[label] = trapz(x, y)
+    push!(auc_data, trapz(x, y))
+end
+
+auc_data
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plot(auc_data, ylim=(0,4200), lw=4)
 
 
 
