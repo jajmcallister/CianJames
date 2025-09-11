@@ -48,11 +48,11 @@ function kesten_update_new007(sizes, ε, η, σ_ε, σ_η)
         new_size = ε_i * sizes[i] + η_i
         sizes[i]=new_size
         if sizes[i] < 0
-            sizes[i] = 0.0
+            sizes[i] = 0.01
         end
         # sizes[i] = max(new_size, 0.0)  # Ensure size is non-negative
         if sizes[i] < 0.0
-            sizes[i]=0.0
+            sizes[i]=0.01
         end
     end
 
@@ -785,10 +785,12 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
+total_time = 140
 total_pool_size = 1000
-# ε, η = .985, 1-ε
-# σ_ε, σ_η = .1, .1
-kesten_time_step = .1
+ε = 0.985
+η = 1-ε
+σ_ε, σ_η = .1, .1
+kesten_timestep = 0.001
 i=A3
 m = 0.05
 parameters = (A1, lambda1, A2, lambda2, m, A3, lambda3)
@@ -802,11 +804,9 @@ poold = sol[3,:]
 maximum(immature_population_var+mature_population_var)
 id_of_bump = argmax(immature_population_var+mature_population_var)
 
-xtickss = collect(0:20:120)
+xtickss = collect(0:20:total_time)
 push!(xtickss, trunc(Int,time_array_var[id_of_bump]))
 xtickss=sort(xtickss)
-
-p2
 
 using Plots.PlotMeasures
 var_plot = plot(0:kesten_timestep:total_time, mean(ihs), lw=2, fillalpha=0.2,  ribbon=std(ihs)/num_trials, label="Immature (Random walks)", color=:pink)
@@ -828,11 +828,11 @@ plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:g
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
 plot!(grid=false,ylim=(0,total_pool_size),legendfontsize=12)
 
-plot(0:kesten_timestep:total_time,ih)
-plot!(0:kesten_timestep:total_time,mh)
-plot!(0:kesten_timestep:total_time,ih+mh)
 
-p2
+plot(ih)
+plot!(mh)
+plot!(ih+mh)
+
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.png")
 # savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.png")
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
@@ -844,11 +844,21 @@ plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate",ylim=(0
 
 
 using KernelDensity
+
+bit_to_add = 20
 synapse_sizes_history_var
-v1 = synapse_sizes_history_var[15]
-v2 = synapse_sizes_history_var[35]
-v3 = synapse_sizes_history_var[55]
-v4 = synapse_sizes_history_var[120]
+synapse_sizes_history_var
+timepoint1 = trunc(Int,(15+bit_to_add)/kesten_timestep)
+timepoint2 = trunc(Int,(35+bit_to_add)/kesten_timestep)
+timepoint3 = trunc(Int,(55+bit_to_add)/kesten_timestep)
+timepoint4 = trunc(Int,(120+bit_to_add)/kesten_timestep)
+v1 = synapse_sizes_history_var[timepoint1]
+v2 = synapse_sizes_history_var[timepoint2]
+v3 = synapse_sizes_history_var[timepoint3]
+v4 = synapse_sizes_history_var[timepoint4]
+
+
+
 
 # Compute kernel density estimate
 bw=0.5
@@ -872,7 +882,7 @@ color4 = RGB(4/255, 4/255, 4/255)
 plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", color=color1)
 plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
 plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
-plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false, xlim=(-0.2,4))
+plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false)
 
 plot(kde_result1.x, scaled_density1, linewidth=4, label="P15", color=color1)
 plot!(kde_result2.x, scaled_density2, linewidth=4, label="P35", color=color2)
@@ -889,14 +899,14 @@ histogram!(v4, fillalpha=0.5, xlabel="Synaptic weight", ylabel="Count", bins=bin
 combined_synapse_sizes = []
 trials_synapse_sizes = []
 
-tttrials = 20
+tttrials = 10
 for i in 1:tttrials
     sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
     push!(combined_synapse_sizes, sum.(synapse_sizes_history_var))
     push!(trials_synapse_sizes, synapse_sizes_history_var)
 end
 
-xticks1 = collect(0:20:120)
+xticks1 = collect(0:20:total_time)
 p = plot(0:kesten_timestep:total_time, mean(combined_synapse_sizes), xticks=xticks1, ribbon=std(combined_synapse_sizes)/sqrt(tttrials), grid=false, lw=3, title="Total synaptic weight over time", xlabel="Days", ylabel="Total synaptic weight", legend=false)
 
 # savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/total_syn_weight.png")
@@ -906,26 +916,10 @@ p = plot(0:kesten_timestep:total_time, mean(combined_synapse_sizes), xticks=xtic
 ########################
 # working out information stored in distribution of synaptic weights
 
-function bartol_bits(sizes)
-    if isempty(sizes)
-        return NaN
-    end
-    μ = mean(sizes)
-    σ = std(sizes)
-    cv = σ / μ
-
-    # Range of observed synaptic sizes
-    s_min, s_max = minimum(sizes), maximum(sizes)
-    dynamic_range = s_max - s_min
-
-    # Bin width is set by variability (Bartol used CV)
-    bin_width = cv * μ
-    N = max(1, floor(dynamic_range / bin_width))   # distinguishable states
-    return log2(N)  # bits per synapse
-end
 
 using SpecialFunctions
-function bartol_bits_theory(sizes; CV=0.083, overlap=0.69, min_clip=1e-3)
+function bartol_bits(sizes; CV=0.083, overlap=0.69, min_clip=1e-3)
+    sizes = filter(>(0.01), sizes)
     if isempty(sizes)
         return NaN
     end
@@ -944,16 +938,59 @@ function bartol_bits_theory(sizes; CV=0.083, overlap=0.69, min_clip=1e-3)
 end
 
 
+function odonnell_bits(w, c)
+    w = filter(>(0.01), w)
+    log_w = log.(w)
+    sigma_w_sq = var(log_w)
 
-function bartol_bits_over_time(size_history)
-    return [bartol_bits_theory(sizes) for sizes in size_history]
+    sigma_eta_sq = log(1+c^2)
+    sigma_x_sq = sigma_w_sq - sigma_eta_sq
+
+    I_w = (1/(2*log(2)))*log2(1+(sigma_x_sq)/(sigma_eta_sq))
+
+    return I_w
 end
 
+bits_timecourse = [[bartol_bits(syn_hist) for syn_hist in trials_synapse_sizes[i]] for i in 1:tttrials]
+bits_timecourse2 = [[odonnell_bits(syn_hist, 0.083) for syn_hist in trials_synapse_sizes[i]] for i in 1:tttrials]
 
-bits_timecourse = [bartol_bits_over_time(syn_hist) for syn_hist in trials_synapse_sizes]
-plot(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3,
-     xlabel="Time", ylabel="Bits per synapse",
-     label="Information capacity", color=:darkgreen, xticks=xticks1, size=(700,500))
+tt = collect(0:1:total_time)
+plot(0:kesten_timestep:total_time, mean(bits_timecourse2), ribbon = std(bits_timecourse2)/sqrt(tttrials), lw=3,
+     xlabel="Time", ylabel="Bits per synapse", 
+     label="Information capacity (O'Donnell)", color=:purple,size=(700,500))
+plot!(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3, ribbon=std(bits_timecourse)/sqrt(tttrials), label="Information capacity (Bartol)", color=:darkgreen)
+
+
+##############
+
+
+
+using Distributions
+
+normal_data1 = rand(Normal(10,1), 1000)
+normal_data2 = rand(Normal(11,1), 1000)
+normal_data3 = rand(Normal(12,1), 1000)
+uniform_data1 = rand(Uniform(10,20), 1000)
+uniform_data2 = rand(Uniform(10,30), 1000)
+uniform_data3 = rand(Uniform(10,40), 1000)
+lognormal_data1 = rand(LogNormal(2,0.3), 1000)
+lognormal_data2 = rand(LogNormal(2.5,0.3), 1000)
+lognormal_data3 = rand(LogNormal(3,0.3), 1000)
+
+normal_data = [normal_data1, normal_data2, normal_data3]
+uniform_data = [uniform_data1, uniform_data2, uniform_data3]
+lognormal_data = [lognormal_data1, lognormal_data2, lognormal_data3]
+
+normal_info = [bartol_bits(data) for data in normal_data]
+normal_info2 = [odonnell_bits(data, 0.1) for data in normal_data]
+uniform_info = [bartol_bits(data) for data in uniform_data]
+uniform_info2 = [odonnell_bits(data, 0.1) for data in uniform_data]
+lognormal_info = [bartol_bits(data) for data in lognormal_data]
+lognormal_info2 = [odonnell_bits(data, 0.1) for data in lognormal_data]
+
+
+
+
 
 
 
@@ -963,6 +1000,8 @@ plot(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3,
 
 
 ### paul's distribution data
+
+
 using Trapz  # for trapezoidal integration
 
 # Data as dictionaries of vectors
@@ -1009,12 +1048,12 @@ data = Dict(
 
 # Desired order
 plot_order = ["P15","P35","P55","P120"]
-colors = [RGB(0.7,0.85,1.0), RGB(0.4,0.7,1.0), RGB(0.2,0.5,1.0), RGB(0.0,0.2,0.8)]
+colors = [RGB(0.25,0.85,1.0), RGB(0.4,0.7,1.0), RGB(0.2,0.5,1.0), RGB(0.0,0.2,0.8)]
 
 p_auc = plot()
 for (i, label) in enumerate(plot_order)
     x, y = data[label]  # get the correct curve
-    plot!(x, y, label=label, color=colors[i], lw=3)
+    plot!(x, y, label=label, color=colors[i], lw=5)
 end
 xlabel!("Size * Intensity Mean")
 ylabel!("Frequency")
@@ -1037,11 +1076,67 @@ end
 
 auc_data
 
+xpos = [15, 35, 55, 120]
+p2 = plot(xpos,auc_data, c=:grey, lw=2, ylim=(0,4500), xticks=([15,35,55,120], ["P15", "P35", "P55", "P120"]), title="Areas under curves", xlabel="Days", ylabel="Area under curve")
+scatter!([xpos[1]],[auc_data[1]], m=:circle, ms=8, c=colors[1])
+scatter!([xpos[2]],[auc_data[2]], m=:circle, ms=8, c=colors[2])
+scatter!([xpos[3]],[auc_data[3]], m=:circle, ms=8, c=colors[3])
+scatter!([xpos[4]],[auc_data[4]], m=:circle, ms=8, c=colors[4],legend=false)
 
-plot(auc_data, ylim=(0,4200), lw=4)
+
+p3 = plot(p_auc,p2, layout=(1,2), size=(1000,400), bottommargin=5mm, leftmargin=5mm)
+
+# savefig(p3, "C://Users/B00955735/OneDrive - Ulster University/Desktop/paul_distributions_and_areas.png")
 
 
+function sample_from_histogram(x, y)
+    total = sum(y)
+    probs = y ./ total
+    samples = []
+    for (xi, pi) in zip(x, probs)
+        n = round(Int, pi * 1000)  # 1000 pseudo-samples per distribution
+        append!(samples, fill(xi, n))
+    end
+    return Float64.(samples)
+end
 
+# Apply your synapse information function
+function synapse_information_from_histogram(x, y, cv)
+    samples = sample_from_histogram(x, y)
+    return odonnell_bits(samples,cv), bartol_bits(samples; CV=cv)
+end
+
+# Compute bits for each distribution
+bits_per_dist_odonnell = Dict()
+bits_per_dist_bartol = Dict()
+for label in ["P15", "P35", "P55", "P120"]
+    x, y = data[label]
+    bits_per_dist_odonnell[label], bits_per_dist_bartol[label] = synapse_information_from_histogram(x, y,0.083)
+end
+
+
+xpos = [15, 35, 55, 120]
+dists_bits_ordered_odonnell = [bits_per_dist_odonnell[label] for label in plot_order]
+dists_bits_ordered_bartol = [bits_per_dist_bartol[label] for label in plot_order]
+p = plot(xpos,dists_bits_ordered_odonnell, label="O'Donnell Info", lw=5, xticks=([15,35,55,120], ["P15", "P35", "P55", "P120"]), 
+xlabel="Distribution", ylabel="Bits per synapse", c=:black, title="Information from distributions",
+marker=:circle,         # use :circle, :diamond, etc.
+    markercolor=:white,     # white fill
+    markerstrokecolor=:black,markersize=8,)
+plot!(xpos,dists_bits_ordered_bartol, c=:grey, label="Bartol Info", lw=5, ylim=(0,8),marker=:diamond,         # use :circle, :diamond, etc.
+    markercolor=:white,     # white fill
+    markerstrokecolor=:black,markersize=8,)
+scatter!([xpos[1]],[dists_bits_ordered_bartol[1]], m=:diamond, ms=8, c=colors[1],label=false)
+scatter!([xpos[2]],[dists_bits_ordered_bartol[2]], m=:diamond, ms=8, c=colors[2],label=false)
+scatter!([xpos[3]],[dists_bits_ordered_bartol[3]], m=:diamond, ms=8, c=colors[3],label=false)
+scatter!([xpos[4]],[dists_bits_ordered_bartol[4]], m=:diamond, ms=8, c=colors[4],label=false)
+scatter!([xpos[1]],[dists_bits_ordered_odonnell[1]], m=:circle, ms=8, c=colors[1],label=false)
+scatter!([xpos[2]],[dists_bits_ordered_odonnell[2]], m=:circle, ms=8, c=colors[2],label=false)
+scatter!([xpos[3]],[dists_bits_ordered_odonnell[3]], m=:circle, ms=8, c=colors[3],label=false)
+scatter!([xpos[4]],[dists_bits_ordered_odonnell[4]], m=:circle, ms=8, c=colors[4],label=false,legend=:topright)
+plot!(xlabel="Days")
+
+# savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/information_from_distributions.png")
 
 
 
