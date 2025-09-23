@@ -405,7 +405,7 @@ end
 
 total_pool_size = 100
 total_time = 120
-kesten_timestep = 0.1
+kesten_timestep = 0.2
 
 
 # a1 = 0.9
@@ -419,11 +419,14 @@ b1 = 0.2
 b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
-A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.05, 0.05, 2.
-A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.04557090317553659, 0.06622531490863738, 3.3026174908321067
-ε = .985
+A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 4, 5, 0.05, 0.05, .5
+# A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.04557090317553659, 0.06622531490863738, 3.3026174908321067
+# ε = .985
+# η = 1-ε
+# σ_ε, σ_η = .1, .1
+ε = .9923
 η = 1-ε
-σ_ε, σ_η = .1, .1
+σ_ε, σ_η = .05, .03
 
 
 creation_func(t,A1,lambda1) = A1 * exp(-t / lambda1) + b1
@@ -434,12 +437,15 @@ de_maturation_func(t,A3,lambda3) = A3 * exp(-t / lambda3)
 creat = creation_func.(0:kesten_timestep:total_time, A1, lambda1)
 elim = elimination_func.(0:kesten_timestep:total_time, A2, lambda2)
 
-ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
-plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate", ylabel="Rate", xlabel="Days")
-
-plot(de_maturation_func.(0:0.01:10, A3, lambda3), lw=3, label="De-maturation rate", ylabel="Rate", xlabel="Days", title="De-maturation rate over time")
+ec_plot = plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation")
+plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination", xlabel="Days", grid=false,ylim=(0,2.5))
+plot!(size=(400,300),dpi=600)
 # savefig(ec_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ec_rate.png")
-# creat = sigmoid_creation.(0:kesten_timestep:total_time)
+
+
+pp = plot(de_maturation_func.(0:0.01:10, A3, lambda3), lw=3, c=:red, label="De-maturation", xlabel="Synaptic Weight", xticks=false, yticks=[0])
+plot!(size=(400,300),dpi=600)
+# savefig(pp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/dem_rate.png")
 
 
 rates_var = creat, m, elim, A3, lambda3
@@ -452,7 +458,7 @@ synapse_sizes_multiple = []
 syn_size_heatmaps_trials = []
 synapse_size_history_multiple = []
 
-num_trials = 2
+num_trials = 10
 
 for i in 1:num_trials
     ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -464,7 +470,7 @@ for i in 1:num_trials
     push!(synapse_size_history_multiple, syn)
 end
 
-syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),ylabel="Synapse ID", xlabel="Days",colorbar_title="Synapse size")
+syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),title="Synaptic weights over time", ylabel="Synapse ID", dpi=600, xlabel="Days",colorbar_title="Synapse size")
 # savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
 
 
@@ -474,8 +480,9 @@ v2 = vcat([synapse_size_history_multiple[i][trunc(Int,35/kesten_timestep)] for i
 v3 = vcat([synapse_size_history_multiple[i][trunc(Int,55/kesten_timestep)] for i in 1:num_trials]...)
 v4 = vcat([synapse_size_history_multiple[i][trunc(Int,120/kesten_timestep)] for i in 1:num_trials]...) 
 
+
 # Compute kernel density estimate
-bw=0.1
+bw=1.0
 kde_result1 = kde(v1,bandwidth=bw)
 kde_result2 = kde(v2,bandwidth=bw)
 kde_result3 = kde(v3,bandwidth=bw)
@@ -589,7 +596,7 @@ hists = heatmap(
     xlabel = "Time",
     ylabel = "Synapse Size",
     colorbar_title = "Count",
-    title = "Histograms of synapse size across time", clims=(0,20)
+    title = "Histograms of synapse size across time", clims=(0,5)
 )
 
 
@@ -597,13 +604,13 @@ hists = heatmap(
 tt = 0.01:kesten_timestep:total_time
 indi = plot(tt,syn_size_heatmaps_trials[1][60,:], label="Synapse 1")
 plot!(tt,syn_size_heatmaps_trials[1][4,:], label="Synapse 2")
-plot!(tt, syn_size_heatmaps_trials[1][1,:], label="Synapse 3",color="green", xticks=collect(0:20:120),xlabel="Days",ylabel="Synapse size")
+plot!(tt, syn_size_heatmaps_trials[1][25,:], label="Synapse 3",color="green", title="Example synaptic weights over time", xticks=collect(0:20:120),xlabel="Days",grid=false, ylabel="Synapse weight", dpi=600)
 
 # savefig(indi, "C://Users/B00955735/OneDrive - Ulster University/Desktop/indi.png")
 
 
 
-
+size(state_recs_var_multiple[1],2)
 
 develop_survival_multiplee = []
 adult_survival_multiplee = []
@@ -650,18 +657,18 @@ l2 = length(adulthoodperiodplot) - length(adult_survival_multiplee[1])
 
 
 # Plot survival fraction over time
-developmental_survival_plot = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiplee),lw=5, ribbon=std(develop_survival_multiplee)/sqrt(num_trials), fillalpha=0.2, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
+developmental_survival_plot = plot(developmentperiodplot[1:end-l1], mean(develop_survival_multiplee),lw=4, fillalpha=0.2, xlabel="Postnatal Day", ylabel="Survival Fraction", xticks=16:1:26,
     title="Synapse Survival Fraction (Early Development)", legend=false, ylim=(0,1.05))
     scatter!(16:1:26, development_points_to_match_data, label="Data",title="Survival Fraction (Early Development)", xlabel="Postnatal day")
 
-adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiplee), ribbon=std(adult_survival_multiplee)/sqrt(num_trials), fillalpha=0.2, xlabel="Days", ylabel="Survival Fraction",
-    title="Synapse Survival Fraction (Adulthood)", lw=5, legend=false, ylim=(0,1.05), xticks=0:1:18,label="Model")
+adult_survival_plot = plot(adulthoodperiodplot[1:end-l2], mean(adult_survival_multiplee), fillalpha=0.2, xlabel="Days", ylabel="Survival Fraction",
+    title="Synapse Survival Fraction (Adulthood)", lw=4, legend=false, ylim=(0,1.05), xticks=0:1:18,label="Model")
     scatter!(adult_ids3, adulthood_points_to_match_data, label="Data",title="Survival Fraction (Adulthood)", xlabel="Days", legend=:bottomleft)
 
-survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1),markersize=6, grid=false)
+survival_fraction_plot = plot(developmental_survival_plot, adult_survival_plot, layout=(2,1),markersize=6, grid=false, dpi=600)
 
 
-# savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.svg")
+# savefig(survival_fraction_plot, "C://Users/B00955735/OneDrive - Ulster University/Desktop/survivalfractionplot.png")
 
 
 
@@ -708,6 +715,8 @@ function synapse_dynamics_var007!(du, u, p, t)
     du[2] = m * N_I - (dematuration_rate) * N_M  # dN_M/dt
     du[3] = - du[1] - du[2]  # dN_P/dt
 end
+
+
 
 function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η, σ_ε, σ_η, kesten_time_step)
     pool = fill(1, total_pool_size);  # Initialize resource pool with synapses
@@ -785,12 +794,12 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-total_time = 140
-total_pool_size = 1000
+total_time = 120
+total_pool_size = 100
 ε = 0.985
 η = 1-ε
 σ_ε, σ_η = .1, .1
-kesten_timestep = 0.5
+kesten_timestep = 
 i=A3
 m = 0.05
 parameters = (A1, lambda1, A2, lambda2, m, A3, lambda3)
@@ -826,8 +835,10 @@ p2 = plot(time_array_var, mature_population_var, lw=5, c=:green, label="Mature s
 plot!(time_array_var, immature_population_var, lw=5, c=:magenta, label="Immature synapses")
 plot!(time_array_var, immature_population_var.+mature_population_var, lw=5, c=:grey, linealpha=0.7,label="Total synapses")
 plot!(title="Population Dynamics (Differential Equations Model)", lw=5, c=:black, label="Total synapses",legend=:bottomright)
-plot!(grid=false,ylim=(0,total_pool_size),legendfontsize=12)
+plot!(grid=false,ylim=(0,total_pool_size),legend=false)
 
+p = plot(p1,p2,layout=(1,2),size=(1400,700), leftmargin=10mm,bottommargin=10mm,dpi=600)
+# savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_bothmodels.png")
 
 plot(ih)
 plot!(mh)
@@ -838,14 +849,11 @@ plot!(ih+mh)
 # savefig(p1,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_randwalks.svg")
 # savefig(p2,"C://Users/B00955735/OneDrive - Ulster University/Desktop/populations_diffeqs.svg")
 
-# Plot elimination and creation rates
-plot(0:kesten_timestep:total_time, creat,lw=3,label="Creation rate")
-plot!(0:kesten_timestep:total_time, elim, lw=3, label="Elimination rate",ylim=(0,2.5))
 
 
 using KernelDensity
 
-bit_to_add = 20
+bit_to_add = 0
 synapse_sizes_history_var
 synapse_sizes_history_var
 timepoint1 = trunc(Int,(15+bit_to_add)/kesten_timestep)
@@ -861,7 +869,7 @@ v4 = synapse_sizes_history_var[timepoint4]
 
 
 # Compute kernel density estimate
-bw=0.5
+bw=0.4
 kde_result1 = kde(v1,bandwidth=bw)
 kde_result2 = kde(v2,bandwidth=bw)
 kde_result3 = kde(v3,bandwidth=bw)
@@ -882,7 +890,10 @@ color4 = RGB(4/255, 4/255, 4/255)
 plot(kde_result1.x, kde_result1.density, linewidth=4, label="P15", color=color1)
 plot!(kde_result2.x, kde_result2.density, linewidth=4, label="P35", color=color2)
 plot!(kde_result3.x, kde_result3.density, linewidth=4, label="P55", color=color3)
-plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight", grid=false)
+plot!(kde_result4.x, kde_result4.density, linewidth=4, label="P120", color=color4, xlabel="Synaptic weight",ylabel="Density", grid=false)
+plot!(xticks=0:1:4, xlim=(-0.3,4))
+
+
 
 plot(kde_result1.x, scaled_density1, linewidth=4, label="P15", color=color1)
 plot!(kde_result2.x, scaled_density2, linewidth=4, label="P35", color=color2)
@@ -890,15 +901,40 @@ plot!(kde_result3.x, scaled_density3, linewidth=4, label="P55", color=color3)
 plot!(kde_result4.x, scaled_density4, linewidth=4, label="P120", color=color4,
       xlabel="Synaptic weight", ylabel="Total synaptic strength", grid=false, xlim=(-0.2,4))
 
-bins=0:.1:5
-histogram(v1, fillalpha=0.5, bins=bins)
-histogram!(v2, fillalpha=0.5, bins=bins)
-histogram!(v3, fillalpha=0.5, bins=bins)
-histogram!(v4, fillalpha=0.5, xlabel="Synaptic weight", ylabel="Count", bins=bins)
+bins=0:.05:5
+
+stephists15 = []
+stephists35 = []
+stephists55 = []
+stephists120 = []
+
+for i in 1:200
+    sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
+    push!(stephists15, synapse_sizes_history_var[timepoint1])
+    push!(stephists35, synapse_sizes_history_var[timepoint2])
+    push!(stephists55, synapse_sizes_history_var[timepoint3])
+    push!(stephists120, synapse_sizes_history_var[timepoint4])
+end
+
+llw=4
+stp = stephist(vcat(stephists15...),bins=bins, label="P15", normalize=true, lw=llw, c=colors[1], xlabel="Synaptic weight", ylabel="Count", legend=:topright)
+stephist!(vcat(stephists35...),bins=bins, lw=llw, label="P35", normalize=true, c=colors[2])
+stephist!(vcat(stephists55...),bins=bins, lw=llw, label="P55", normalize=true, c=colors[3])
+stephist!(vcat(stephists120...),bins=bins, lw=llw, label="P120", normalize=true, c=colors[4])
+plot!(title="Distributions of synaptic weight over time", yticks=false,normalize=true,  grid=false,leftmargin=5mm,xlim=(-0.05,4),dpi=600)
+
+# savefig(stp, "C://Users/B00955735/OneDrive - Ulster University/Desktop/stephist.png")
+
+histogram(vcat(stephists15...), bins=bins, label="P15", lw=0,fillalpha=0.3,  c=colors[1], xlabel="Synaptic weight", ylabel="Count", legend=:topright)
+histogram!(vcat(stephists35...), bins=bins, lw=0, label="P35", fillalpha=0.3,  c=colors[2])
+histogram!(vcat(stephists55...), bins=bins, lw=0, label="P55", fillalpha=0.3,  c=colors[3])
+histogram!(vcat(stephists120...), bins=bins, lw=0, label="P120", fillalpha=0.3,  c=colors[4])
+
 
 combined_synapse_sizes = []
 trials_synapse_sizes = []
 
+total_time
 tttrials = 10
 for i in 1:tttrials
     sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -906,8 +942,10 @@ for i in 1:tttrials
     push!(trials_synapse_sizes, synapse_sizes_history_var)
 end
 
+combined_synapse_sizes[1]
+
 xticks1 = collect(0:20:total_time)
-p = plot(0:kesten_timestep:total_time, mean(combined_synapse_sizes), xticks=xticks1, ribbon=std(combined_synapse_sizes)/sqrt(tttrials), grid=false, lw=3, title="Total synaptic weight over time", xlabel="Days", ylabel="Total synaptic weight", legend=false)
+p = plot(mean(combined_synapse_sizes), ribbon=std(combined_synapse_sizes)/sqrt(tttrials), grid=false, lw=3, title="Total synaptic weight over time", xlabel="Days", ylabel="Total synaptic weight", legend=false)
 
 # savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/total_syn_weight.png")
 
@@ -961,6 +999,84 @@ plot(0:kesten_timestep:total_time, mean(bits_timecourse2), ribbon = std(bits_tim
 plot!(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3, ribbon=std(bits_timecourse)/sqrt(tttrials), label="Information capacity (Bartol)", color=:darkgreen)
 
 
+
+function histogram_entropy(x::Vector{<:Real}; nbinss::Int=50, eps::Real=1e-12)
+    h = fit(Histogram, x, nbins=nbinss)
+    p = h.weights ./ sum(h.weights)
+    p = clamp.(p, eps, 1.0)   # avoid log(0) or negatives
+    H = -sum(p .* log2.(p))
+    return H
+end
+
+
+entropies = [[histogram_entropy(syn_hist) for syn_hist in trials_synapse_sizes[i]] for i in 1:tttrials]
+
+p = plot(0:0.2:120-0.2, mean(entropies)[1:end], title="Entropy of synaptic weight distribution over time", c=:seagreen, lw=4, 
+xlabel="Days", ylabel="Entropy (bits)", legend=false, grid=false, size=(600,350),xticks=0:20:120,dpi=600)
+
+
+mean_entropies = vec(mean(entropies, dims=1))[1]
+time = 0:0.2:120-0.2
+
+@gif for i in 1:length(time)
+    plot(time[1:i], mean_entropies[1:i],
+         title="Entropy of synaptic weight distribution over time",
+         c=:seagreen, lw=4,
+         xlabel="Days", ylabel="Entropy (bits)",
+         legend=false, grid=false,
+         size=(600,350), xticks=0:20:120)
+end every 1
+
+
+
+# Function to compute mean, variance, and SNR over time
+function analyse_synaptic_distribution(traj)
+    T = size(traj, 1)
+    
+    mean_w = zeros(T)
+    var_w = zeros(T)
+    snr_w = zeros(T)
+    
+    for t in 1:T
+        mean_w[t] = mean(traj[t])
+        var_w[t] = var(traj[t])
+        
+        # SNR: mean / std (or sqrt(variance))
+        snr_w[t] = mean_w[t] / sqrt(var_w[t] + 1e-12)  # small eps to avoid div by zero
+    end
+    
+    return mean_w, var_w, snr_w
+end
+
+trials_synapse_sizes[1][1000]
+
+size(trials_synapse_sizes[1],2)
+
+# Compute metrics
+mean_w, var_w, snr_w = [analyse_synaptic_distribution(trials_synapse_sizes[i]) for i in 1:tttrials]
+
+
+# Plot results
+plot(1:length(mean(mean_w)), mean(mean_w), label="Mean Weight", xlabel="Time", ylabel="Value", lw=2)
+plot!(1:length(mean(var_w)), mean(var_w), label="Variance", lw=2)
+plot(1:length(mean(snr_w)), mean(snr_w), label="SNR", lw=2, legend=:topright)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ##############
 
 
@@ -974,8 +1090,8 @@ uniform_data1 = rand(Uniform(10,20), 1000)
 uniform_data2 = rand(Uniform(10,30), 1000)
 uniform_data3 = rand(Uniform(10,40), 1000)
 lognormal_data1 = rand(LogNormal(2,0.3), 1000)
-lognormal_data2 = rand(LogNormal(2.5,0.3), 1000)
-lognormal_data3 = rand(LogNormal(3,0.3), 1000)
+lognormal_data2 = rand(LogNormal(3.,0.3), 1000)
+lognormal_data3 = rand(LogNormal(5,0.3), 1000)
 
 normal_data = [normal_data1, normal_data2, normal_data3]
 uniform_data = [uniform_data1, uniform_data2, uniform_data3]
@@ -1057,15 +1173,17 @@ for (i, label) in enumerate(plot_order)
 end
 xlabel!("Size * Intensity Mean")
 ylabel!("Frequency")
-title!("Distributions", size=(600,400), grid=false)
+title!("Distributions from data", size=(600,400), grid=false,dpi=600)
+
+# savefig(p_auc, "C://Users/B00955735/OneDrive - Ulster University/Desktop/paul_distributions.png")
 
 # Compute areas
 areas = Dict()
 auc_data = []
-for (label, (x, y)) in data
-    areas[label] = trapz(x, y)
-    push!(auc_data, areas[label])
-end
+# for (label, (x, y)) in data
+#     areas[label] = trapz(x, y)
+#     push!(auc_data, areas[label])
+# end
 
 
 for label in plot_order
@@ -1100,7 +1218,7 @@ function sample_from_histogram(x, y)
     return Float64.(samples)
 end
 
-# Apply your synapse information function
+# Apply synapse information function
 function synapse_information_from_histogram(x, y, cv)
     samples = sample_from_histogram(x, y)
     return odonnell_bits(samples,cv), bartol_bits(samples; CV=cv)
@@ -1140,13 +1258,38 @@ plot!(xlabel="Days")
 
 
 
+function snr_and_entropy(x, y; eps=1e-12)
+    # normalize weights (probabilities)
+    p = y ./ sum(y)
 
+    # weight~ed mean and variance
+    μ = sum(p .* x)
+    σ² = sum(p .* (x .- μ).^2)
+    σ = sqrt(σ²)
 
+    snr = μ / (σ + eps)
 
+    # Shannon entropy (bits)
+    p = clamp.(p, eps, 1.0)
+    H = -sum(p .* log2.(p))
 
+    return snr, H
+end
 
+# Apply to your data dict
+results = Dict()
+for (label, (x, y)) in data
+    snr, H = snr_and_entropy(x, y)
+    results[label] = (SNR=snr, Entropy=H)
+end
 
+results_snr = [results[label].SNR for label in plot_order]
+results_entropy = [results[label].Entropy for label in plot_order]
 
+p1 = plot(xpos, results_snr, lw=3, marker=:circle, ylim=(0,1.5), ms=8, c=:blue, label="SNR", xticks=([15,35,55,120], ["P15", "P35", "P55", "P120"]), xlabel="Distribution", ylabel="Value", title="SNR")
+p2 = plot(xpos, results_entropy, lw=3, marker=:diamond, ms=8, c=:red, label=false, title="Entropy", ylim=(0,4), xticks=([15,35,55,120], ["P15", "P35", "P55", "P120"]), xlabel="Days")
+
+# savefig(p2, "C://Users/B00955735/OneDrive - Ulster University/Desktop/entropy_from_distributions.png")
 
 
 ########################
