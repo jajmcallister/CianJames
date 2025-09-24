@@ -419,7 +419,10 @@ b1 = 0.2
 b2 = 0.2
 
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
+
+#these params make for a really good fit with the holtmaat survival fraction data
 A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 4, 5, 0.05, 0.05, .5
+
 # A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.04557090317553659, 0.06622531490863738, 3.3026174908321067
 # ε = .985
 # η = 1-ε
@@ -794,14 +797,14 @@ function run_simulation_diffeq_var007(total_time, total_pool_size, paras, ε, η
     return solution, synapse_sizes, synapse_sizes_history, synapses, Ihist, Mhist
 end
 
-total_time = 120
-total_pool_size = 100
-ε = 0.985
-η = 1-ε
-σ_ε, σ_η = .1, .1
-kesten_timestep = 
-i=A3
-m = 0.05
+# total_time = 120
+# total_pool_size = 100
+# ε = 0.985
+# η = 1-ε
+# σ_ε, σ_η = .1, .1
+# kesten_timestep = 
+# i=A3
+# m = 0.05
 parameters = (A1, lambda1, A2, lambda2, m, A3, lambda3)
 
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var007(total_time, total_pool_size, parameters, ε, η, σ_ε, σ_η, kesten_timestep);
@@ -1048,7 +1051,7 @@ function analyse_synaptic_distribution(traj)
     return mean_w, var_w, snr_w
 end
 
-trials_synapse_sizes[1][1000]
+trials_synapse_sizes[1][100]
 
 size(trials_synapse_sizes[1],2)
 

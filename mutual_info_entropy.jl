@@ -3,26 +3,25 @@
 
 
 
-function mutual_info_from_weights(weights)
-    if isempty(weights)
-        return 0.0
-    end
-    # closed-form formula
-    return 0.5 * log(1 + sum(abs2, weights))
-end
+# function mutual_info_from_weights(weights)
+#     if isempty(weights)
+#         return 0.0
+#     end
+#     # closed-form formula
+#     return 0.5 * log(1 + sum(abs2, weights))
+# end
 
-function mutual_info_over_time(weight_dists)
-    return [mutual_info_from_weights(w) for w in weight_dists]
-end
-
-
-mi_vals_trials = [mutual_info_over_time(weight_dists) for weight_dists in trials_synapse_sizes]
-
-plot(0:0.2:120-0.2, mean(mi_vals_trials), ribbon=std(mi_vals_trials)/sqrt(length(mi_vals_trials)), xlabel="Days", xticks=0:20:120, ylabel="Mutual Information", lw=2, legend=false)
+# function mutual_info_over_time(weight_dists)
+#     return [mutual_info_from_weights(w) for w in weight_dists]
+# end
 
 
+# mi_vals_trials = [mutual_info_over_time(weight_dists) for weight_dists in trials_synapse_sizes]
 
-function entropy_over_time(synapse_sizes)
+# plot(0:0.2:120-0.2, mean(mi_vals_trials), ribbon=std(mi_vals_trials)/sqrt(length(mi_vals_trials)), xlabel="Days", xticks=0:20:120, ylabel="Mutual Information", lw=2, legend=false)
+
+
+function differential_entropy_over_time(synapse_sizes)
     entropies = Float64[]
     for w in synapse_sizes
         σ² = sum(abs2, w)
@@ -31,13 +30,48 @@ function entropy_over_time(synapse_sizes)
     return entropies
 end
 
-ent_vals_trials = [entropy_over_time(weight_dists) for weight_dists in trials_synapse_sizes]
+ent_vals_trials = [differential_entropy_over_time(weight_dists) for weight_dists in trials_synapse_sizes]
 
 p = plot(0:0.2:120-0.2, mean(ent_vals_trials), ribbon=std(ent_vals_trials)/sqrt(length(ent_vals_trials)), c=:red, 
         lw=4, xlabel="Days", xticks=0:20:120, ylabel="Differential Entropy",legend=false, ylim=(-3,4), grid=false, title="Differential entropy of output y",dpi=600)
 
-savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/diff_entropy_output.png")
+# savefig(p, "C://Users/B00955735/OneDrive - Ulster University/Desktop/diff_entropy_output.png")
 
+using LinearAlgebra, StatsBase
+function simulated_entropy(weights; N=10_000, nbins=60)
+    if isempty(weights)
+        return NaN
+    end
+    # sample x_i ~ N(0,1), compute y = sum(w_i * x_i)
+    ys = [dot(weights, randn(length(weights))) for _ in 1:N]
+    h = fit(Histogram, ys, nbins=nbins)
+    p = h.weights ./ sum(h.weights)
+    return -sum(p .* log.(p .+ eps()))
+end
+
+function simulated_entropy_mean(weights; N=10_000, nbins=60, reps=20)
+    if isempty(weights)
+        return NaN
+    end
+    vals = Float64[]
+    for _ in 1:reps
+        ys = [dot(weights, randn(length(weights))) for _ in 1:N]
+        h = fit(Histogram, ys; nbins=nbins)
+        p = h.weights ./ sum(h.weights)
+        push!(vals, -sum(p .* log.(p .+ eps())))
+    end
+    return mean(vals)
+end
+
+
+
+simulated_entropies = [simulated_entropy_mean.(trials_synapse_sizes[i]) for i in 1:length(trials_synapse_sizes)]
+
+plot(mean(simulated_entropies))
+
+
+var_values = [var.(w) for w in trials_synapse_sizes]
+plot(0:0.2:120-0.2, mean(var_values), ribbon=std(var_values)/sqrt(length(var_values)))
 
 
 
