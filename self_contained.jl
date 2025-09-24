@@ -1003,7 +1003,7 @@ plot!(0:kesten_timestep:total_time, mean(bits_timecourse), lw=3, ribbon=std(bits
 
 
 
-function histogram_entropy(x::Vector{<:Real}; nbinss::Int=50, eps::Real=1e-12)
+function histogram_entropy(x; nbinss::Int=50, eps::Real=1e-12)
     h = fit(Histogram, x, nbins=nbinss)
     p = h.weights ./ sum(h.weights)
     p = clamp.(p, eps, 1.0)   # avoid log(0) or negatives

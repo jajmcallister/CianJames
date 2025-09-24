@@ -1,4 +1,168 @@
+function track_times_variable_rates_0071(total_time, total_pool_size, rates, ﾎｵ, ﾎｷ, ﾏダﾎｵ, ﾏダﾎｷ, kesten_time_step)
+    pool = total_pool_size
+    steps = trunc(Int, total_time / kesten_time_step)
+    immature = 0
+    mature = 0
+    pool_history = []
+    immature_history = []
+    mature_history = []
 
+    state_records = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+    state_records_heatmap = zeros(total_pool_size, trunc(Int,total_time/kesten_time_step))
+
+    I_pop = []
+    M_pop = []
+    pool_pop = [i for i in 1:total_pool_size]
+    cr, m, el, A, lambda  = rates
+
+    push!(pool_history, pool)
+    push!(immature_history, immature)
+    push!(mature_history, mature)
+    
+    # Synapse sizes for mature population
+    synapse_sizes = Float64[]
+    synapse_size_history = []
+    
+    
+    # Simulation
+    for t in 1:steps
+        # 1 Transitions from pool to immature
+        pool_to_immature = 0
+        transition_prob1 = cr[t] * kesten_timestep
+        for i in 1:pool
+            if rand() < transition_prob1
+                pool_to_immature += 1
+            end
+        end
+        pool -= pool_to_immature
+        immature += pool_to_immature
+    
+        # 2 Transitions from immature to mature
+        immature_to_mature = 0
+        transition_prob2 = m * kesten_timestep  # Probability for each immature synapse to become mature
+
+        for i in 1:immature
+            if rand() < transition_prob2
+                immature_to_mature += 1
+            end
+        end
+
+        # Update the counts
+        immature -= immature_to_mature
+        mature += immature_to_mature
+    
+        # Initialize new mature synapse sizes
+        for i in 1:immature_to_mature
+            push!(synapse_sizes, 0.01)  # Initial size of a new mature synapse
+        end
+    
+        synapse_sizes = sort(synapse_sizes, rev=true)
+    
+        # 3 Transitions from mature to immature
+        mature_to_immature_indices = []
+        for (id, size) in enumerate(synapse_sizes)
+            prob = A * kesten_timestep
+            if rand() < prob
+                push!(mature_to_immature_indices, id)
+            end
+        end
+
+        
+    
+        # Update states based on calculated probabilities
+        mature_to_immature = length(mature_to_immature_indices)
+        mature_to_immature = round(Int, mature_to_immature)
+        mature -= mature_to_immature
+        immature += mature_to_immature
+    
+        # Remove synapse sizes for synapses that became immature
+        # Sort indices in reverse order
+        sorted_indices = sort(mature_to_immature_indices, rev=true)
+    
+        # Delete elements at the specified indices
+        for idx in sorted_indices
+            deleteat!(synapse_sizes, idx)
+        end
+    
+        # 4 Transitions from immature to pool
+        immature_to_pool = 0
+        transition_prob3 = el[t] * kesten_timestep  # Probability for each immature synapse to transition to the pool
+
+        for i in 1:immature
+            if rand() < transition_prob3
+                immature_to_pool += 1
+            end
+        end
+
+        # Update the counts
+        immature -= immature_to_pool
+        pool += immature_to_pool
+
+        
+        push!(pool_history, pool)
+        push!(immature_history, immature)
+        push!(mature_history, mature)
+
+
+        # 1. Pool to immature
+        pool_to_immature_count = abs(trunc(Int, pool_to_immature))
+        pool_to_immature_indxs = safe_sample007(pool_pop, pool_to_immature_count, replace=false)
+        filter!(x -> !in(x, pool_to_immature_indxs), pool_pop)
+        append!(I_pop, pool_to_immature_indxs)
+        
+        # 2. Immature to mature
+        immature_to_mature_count = trunc(Int, immature_to_mature)
+        immature_to_mature_indxs = safe_sample007(I_pop, immature_to_mature_count, replace=false)
+        filter!(x -> !in(x, immature_to_mature_indxs), I_pop)
+        append!(M_pop, immature_to_mature_indxs)
+        
+        # 3. Mature to immature
+        mature_to_immature_count = abs(trunc(Int, mature_to_immature))
+        mature_to_immature_indxs = safe_sample007(M_pop, mature_to_immature_count, replace=false)
+        filter!(x -> !in(x, mature_to_immature_indxs), M_pop)
+        append!(I_pop, mature_to_immature_indxs)
+        
+        # 4. Immature to pool
+        immature_to_pool_count = trunc(Int, immature_to_pool)
+        immature_to_pool_indxs = safe_sample007(I_pop, immature_to_pool_count, replace=false)
+        filter!(x -> !in(x, immature_to_pool_indxs), I_pop)
+        append!(pool_pop, immature_to_pool_indxs)
+
+
+        synapse_sizes = kesten_update_new007(synapse_sizes, ﾎｵ, ﾎｷ, ﾏダﾎｵ, ﾏダﾎｷ)
+    
+
+        push!(synapse_size_history, synapse_sizes)
+
+        # Now recording the current state of the synapses in the state record matrix
+        for j in 1:total_pool_size
+            if j in pool_pop
+                state_records[j,t] = 0
+            elseif j in I_pop
+                state_records[j,t] = 1
+            elseif j in M_pop
+                state_records[j,t] = 2
+            end
+        end
+
+        # Record the current state in the state_records_heatmap matrix
+        for j in 1:total_pool_size
+            if j in pool_pop
+                state_records_heatmap[j, t] = 0 # in the pool, size = 0
+            elseif j in I_pop
+                state_records_heatmap[j, t] = 0  # in immature population size is 0
+            elseif j in M_pop
+                idx = findfirst(==(j), M_pop)
+                if idx !== nothing
+                    state_records_heatmap[j, t] = synapse_sizes[idx]
+                end
+            end
+        end
+    
+    end
+
+    return immature_history, mature_history, state_records, synapse_sizes, state_records_heatmap, synapse_size_history
+end
 
 ﾎｵ = .9923
 ﾎｷ = 1-ﾎｵ
@@ -30,7 +194,7 @@ synapse_size_history_multiple = []
 num_trials = 10
 
 for i in 1:num_trials
-    ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_007(total_time, total_pool_size, rates_var1, ﾎｵ, ﾎｷ, ﾏダﾎｵ, ﾏダﾎｷ, kesten_timestep);
+    ih_var, mh_var, state_record_var, syn_sizes_var, syn_heatmap, syn = track_times_variable_rates_0071(total_time, total_pool_size, rates_var1, ﾎｵ, ﾎｷ, ﾏダﾎｵ, ﾏダﾎｷ, kesten_timestep);
     push!(state_recs_var_multiple, state_record_var)
     push!(ihs, ih_var)
     push!(mhs, mh_var)
@@ -46,24 +210,37 @@ end_val = smoothed_avg[end]
 id_max = argmax(smoothed_avg)
 
 
-p1 = plot!(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trials), lw=3, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
+p1 = plot(0:kesten_timestep:total_time,mean(mhs), ribbon=std(mhs)/sqrt(num_trials), lw=3, c=:green, label="Mature synapses", xlabel="Postnatal Day",ylabel="Number")
 plot!(0:kesten_timestep:total_time, mean(ihs), ribbon=std(ihs)/sqrt(num_trials), lw=3, c=:magenta, label="Immature synapses")
 plot!(0:kesten_timestep:total_time, mean(ihs).+mean(mhs), ribbon=std(ihs)/sqrt(num_trials), lw=3, linealpha=0.7, c=:grey, label="Total synapses")
 plot!(title="Population Dynamics", lw=3, c=:black, label="Total synapses",legend=:bottomright)
 plot!(grid=false,legendfontsize=12,ylim=(0,100))
+
+
+function steady_state_solutions(c, m, e, i, total_pool_size)
+    N_I_ss = total_pool_size / (1 + m/i + e/c)
+    N_M_ss = total_pool_size / (1 + i/m + (e*i)/(c*m))
+    N_P_ss = total_pool_size - N_I_ss - N_M_ss
+    return N_I_ss, N_M_ss, N_P_ss
+end
+
+ssi, ssm, ssp = steady_state_solutions(0.5,0.2,0.2,0.2,100)
+
+hline!([ssi], linestyle=:dash, c=:black, label="Steady state")
+hline!([ssm+ssi], linestyle=:dash, c=:black, label=false)
+plot!(title="Population Dynamics with Steady State Calculation", grid=false,legendfontsize=12,ylim=(0,100),dpi=600)
+
+savefig(p1, "C://Users/B00955735/OneDrive - Ulster University/Desktop/ss_population_dynamics.png")
+
+
 
 #########
 
 
 function synapse_dynamics_const!(du, u, p, t)
     # Unpack parameters
-    A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes = p 
+    c_t, e_t, m, dematuration_rate = p 
     N_I, N_M, N_P = u
-
-    # Set all rates constant
-    c_t = 0.5          # creation rate
-    e_t = 0.2          # elimination rate
-    dematuration_rate = 0.2  # dematuration rate
 
     du[1] = c_t * N_P - (m + e_t) * N_I + dematuration_rate * N_M  # dN_I/dt
     du[2] = m * N_I - dematuration_rate * N_M                       # dN_M/dt
@@ -76,7 +253,7 @@ function run_simulation_diffeq_var0071(total_time, total_pool_size, paras, ﾎｵ, ﾎ
     synapses = Int[]  # Array to hold states of synapses (0s and 1s)
     synapse_sizes = Float64[]  # Sizes of mature synapses
     synapse_sizes_history = []
-    A1, lambda1, A2, lambda2, m, A3, lambda3 = paras
+    c,e,m,d = paras
     # A, m, i, ﾎｻ = paramss
     # Initial conditions
     u0 = [0.0, 0.0, total_pool_size];
@@ -91,11 +268,11 @@ function run_simulation_diffeq_var0071(total_time, total_pool_size, paras, ﾎｵ, ﾎ
 
     current_time = 0.0;
     
-    prams = A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes
+    prams = c,e,m,d
     probb = ODEProblem(synapse_dynamics_const!, u0, tspan, prams);
 
     while current_time < total_time
-        prams = A1, lambda1, A2, lambda2, m, A3, lambda3, synapse_sizes
+        prams = c,e,m,d
         probb = ODEProblem(synapse_dynamics_const!, u0, tspan, prams);
         sol = solve(probb, Tsit5(), saveat=current_time:kesten_time_step:current_time + kesten_time_step);
         N_I, N_M, P = sol.u[end];
@@ -125,7 +302,7 @@ function run_simulation_diffeq_var0071(total_time, total_pool_size, paras, ﾎｵ, ﾎ
         elseif N_M < length(synapse_sizes) # If synapses have dematured out of the mature population
             num_delete_matures = length(synapse_sizes) - round(Int, N_M) #find how many need to be deleted
             sizes = synapse_sizes
-            weights = A3 .* sizes #* exp.(-sizes ./ lambda3)
+            weights = d .* sizes #* exp.(-sizes ./ lambda3)
             weights ./= sum(weights)  # Normalise to sum to 1
         
             # Sample indices to delete based on weights, without replacement
@@ -148,7 +325,7 @@ function run_simulation_diffeq_var0071(total_time, total_pool_size, paras, ﾎｵ, ﾎ
 end
 
 
-parameters = (0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2)
+parameters = (0.5, 0.2, 0.2, 0.2)
 
 sol, synapse_sizes_var, synapse_sizes_history_var, synapses_var, ih, mh = run_simulation_diffeq_var0071(total_time, total_pool_size, parameters, ﾎｵ, ﾎｷ, ﾏダﾎｵ, ﾏダﾎｷ, kesten_timestep);
 
