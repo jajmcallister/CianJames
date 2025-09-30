@@ -421,7 +421,9 @@ b2 = 0.2
 # a1,k1,a2,k2,m,A,lambda = 0.51362973760933, 0.05301263362487851, 1.460204081632653, 0.13542274052478132, 0.07361516034985421, 0.0736151603498542, 0.629883381924198
 
 #these params make for a really good fit with the holtmaat survival fraction data
-A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 4, 5, 0.05, 0.05, .5
+# A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 4, 5, 0.05, 0.05, .5
+
+A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 3, 5, 0.1, 0.1, .9
 
 # A1,lambda1,A2,lambda2,m,A3,lambda3 = .9, 30, 2, 5, 0.04557090317553659, 0.06622531490863738, 3.3026174908321067
 # ε = .985
@@ -472,6 +474,8 @@ for i in 1:num_trials
     push!(syn_size_heatmaps_trials,syn_heatmap)
     push!(synapse_size_history_multiple, syn)
 end
+
+plot(mean(mhs))
 
 syns_ht = heatmap(syn_size_heatmaps_trials[1],clims=(0,3),xticks=(0:2000:12000,0:20:120),title="Synaptic weights over time", ylabel="Synapse ID", dpi=600, xlabel="Days",colorbar_title="Synapse size")
 # savefig(syns_ht, "C://Users/B00955735/OneDrive - Ulster University/Desktop/syns_ht.png")
